@@ -8,6 +8,7 @@ import (
     "github.com/gorilla/mux"
     _ "github.com/go-sql-driver/mysql"
     "database/sql"
+    boltDB "github.com/boltdb/bolt"
 )
 
 type Song struct {
@@ -17,8 +18,8 @@ type Song struct {
     Image string `json:"image"`
     Album string `json:"album"`
     Length string `json:"length"`
-    Secs string `json:"secs"`
-    Remaining string `json:"remaining"`
+    Secs int `json:"secs"`
+    Remaining int `json:"remaining"`
     Share string `json:"share"`
     Url string `json:"url"`
     }
@@ -44,6 +45,14 @@ func readPost(w http.ResponseWriter, r *http.Request){
     err = query.Scan(&song.Artist, &song.Title, &song.Album, &song.Length, &song.Share, &song.Url, &song.Image)
     checkErr(err)
 
+    saveData("artist", song.Artist)
+    saveData("title", song.Title)
+    saveData("album", song.Album)
+    saveData("length", song.Length)
+    saveData("share", song.Share)
+    saveData("url", song.Url)
+    saveData("image", song.Image)
+
     db.Close()
 
     fmt.Fprintf(w, "Song: %v", vars["file"])
@@ -53,21 +62,24 @@ func readPost(w http.ResponseWriter, r *http.Request){
 func returnSongs(w http.ResponseWriter, r *http.Request){
     fmt.Println("Endpoint Hit: returnApi")
     w.Header().Set("Access-Control-Allow-Origin", "*") 
-    var song Song
-    songs := Songs{
-// Doesn't work:        
-    Song{Title: song.Title,
-         Artist: "Rihanna & Drake",
-         Show: "XTRadio" ,
-         Image: "https://img.xtradio.org/tracks/2809999333.jpg",
-         Album: "",
-         Length: "04:01",
-         Secs: "241", 
-         Remaining: "217",
-         Share: "https://soundcloud.com/sylow-75372780/rihanna-drake-work-sylow-remix-cover-by-reynolds-heesters",
-         Url: "Rihanna--Drake-Work-Sylow-Remix-feat-Reynolds--Heesters"},
-    }    
-    json.NewEncoder(w).Encode(songs)
+
+    bolt, err := boltDB.Open("my.db", 0600, nil)
+    checkErr(err)
+
+    var song []byte
+
+    bolt.View(func(tx *boltDB.Tx) error {
+	b := tx.Bucket([]byte("songlist"))
+	b.ForEach(func(k, v []byte) error {
+		fmt.Printf("key=%s, value=%s\n", k, v)
+                return nil
+	})
+	v := b.Get([]byte("artist"))
+	fmt.Printf("The answer is: %s\n", v)
+	return nil
+    })
+    defer bolt.Close()
+    json.NewEncoder(w).Encode(song)
 }
 
 func publishApi() {
@@ -79,6 +91,27 @@ func publishApi() {
               Queries("file", "{file}")
 
     log.Fatal(http.ListenAndServe(":10000", apiRouter))
+}
+
+func saveData(key, value  string) error {
+    bolt, err := boltDB.Open("my.db", 0600, nil)
+    checkErr(err)
+
+    bolt.Update(func(tx *boltDB.Tx) error {
+	b, err := tx.CreateBucketIfNotExists([]byte("songlist"))
+        checkErr(err)
+
+	err2 := b.Put([]byte(key), []byte(value))
+	if err2 != nil {
+		return fmt.Errorf("create value: %s", err2)
+	}
+        fmt.Println("Data save: ", key, value)
+	return nil
+    })
+
+    defer bolt.Close()
+
+    return nil
 }
 
 func checkErr(err error) {
