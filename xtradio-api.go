@@ -17,7 +17,7 @@ type Song struct {
     Show string `json:"show"`
     Image string `json:"image"`
     Album string `json:"album"`
-    Length string `json:"length"`
+    Length int `json:"length"`
     Secs int `json:"secs"`
     Remaining int `json:"remaining"`
     Share string `json:"share"`
@@ -51,6 +51,10 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request){
     // Save it to the "Songs" struct
     err = query.Scan(&song.Artist, &song.Title, &song.Album, &song.Length, &song.Share, &song.Url, &song.Image)
     checkErr(err)
+    song.Image = "https://img.xtradio.org/tracks/" + song.Image
+// fix these
+    song.Remaining = 100
+    song.Secs = song.Length
 
     db.Close()
 
