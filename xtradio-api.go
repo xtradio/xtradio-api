@@ -9,6 +9,7 @@ import (
     _ "github.com/go-sql-driver/mysql"
     "database/sql"
     "sync"
+    "time"
 )
 
 type Song struct {
@@ -18,15 +19,19 @@ type Song struct {
     Image string `json:"image"`
     Album string `json:"album"`
     Length int `json:"length"`
-    Secs int `json:"secs"`
     Remaining int `json:"remaining"`
     Share string `json:"share"`
     Url string `json:"url"`
     }
 
+type Duration struct {
+    Finished time.Time
+}
+
 type cache struct {
 	sync.RWMutex
 	song Song
+	duration Duration
 }
 
 type songsHandler struct {
@@ -41,6 +46,7 @@ func homePage(w http.ResponseWriter, r *http.Request){
 func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request){
     vars := mux.Vars(r)
     var song Song
+    var duration Duration
     // Open and connect do DB
     db, err := sql.Open("mysql", "root:test@tcp(127.0.0.1:3306)/radio?charset=utf8")
     checkErr(err)
@@ -51,28 +57,34 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request){
     // Save it to the "Songs" struct
     err = query.Scan(&song.Artist, &song.Title, &song.Album, &song.Length, &song.Share, &song.Url, &song.Image)
     checkErr(err)
+
+    // Add url to image
     song.Image = "https://img.xtradio.org/tracks/" + song.Image
-// fix these
-    song.Remaining = 100
-    song.Secs = song.Length
+
+    // Calculate when the song will finish, will be needed for the "remaining" var
+    duration.Finished = time.Now().Local().Add(time.Second * time.Duration(song.Length))
 
     db.Close()
 
     h.c.Lock()
     defer h.c.Unlock()
     h.c.song = song
-
-    fmt.Fprintf(w, "Song: %v", vars["file"])
-    fmt.Println("readPost hit:", vars["file"], song.Artist, song.Title)
+    h.c.duration = duration
 }
 
 func (h songsHandler) returnSongs(w http.ResponseWriter, r *http.Request){
     h.c.RLock()
     defer h.c.RUnlock()
 
+    // Calculate remaining seconds in real time
+    remaining := time.Until(h.c.duration.Finished)
+    h.c.song.Remaining = int(remaining.Seconds())
+    fmt.Println("Time remaining: ", remaining.Seconds()) 
+
     fmt.Println("Endpoint Hit: returnApi")
     w.Header().Set("Access-Control-Allow-Origin", "*") 
-
+    
+    // Output json
     json.NewEncoder(w).Encode(h.c.song)
 }
 
