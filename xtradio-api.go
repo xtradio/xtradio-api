@@ -49,7 +49,9 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request){
     var duration Duration
     // Open and connect do DB
     db, err := sql.Open("mysql", "root:test@tcp(127.0.0.1:3306)/radio?charset=utf8")
-    checkErr(err)
+    if err != nil {
+        panic(err)
+    }
 
     // Fetch details for the track
     query := db.QueryRow("SELECT artist, title, album, lenght, share, url, image FROM details WHERE filename=?", vars["file"])
@@ -58,6 +60,10 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request){
     err = query.Scan(&song.Artist, &song.Title, &song.Album, &song.Length, &song.Share, &song.Url, &song.Image)
     checkErr(err)
 
+    if song.Image == "" {
+        song.Image = "default.png"
+    }
+     
     // Add url to image
     song.Image = "https://img.xtradio.org/tracks/" + song.Image
 
