@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// Song details
 type Song struct {
 	Title     string `json:"song"`
 	Artist    string `json:"artist"`
@@ -26,6 +27,7 @@ type Song struct {
 	URL       string `json:"url"`
 }
 
+// Duration of the song
 type Duration struct {
 	Finished time.Time
 }
