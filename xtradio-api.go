@@ -49,6 +49,9 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	var song Song
 	var duration Duration
+
+	fmt.Println(time.Now(), r.RequestURI, "Reading post message for song.", vars["file"])
+
 	// Open and connect do DB
 	db, err := sql.Open("mysql", "root:test@tcp(127.0.0.1:3306)/radio?charset=utf8")
 	if err != nil {
@@ -115,7 +118,13 @@ func (h songsHandler) returnSongs(w http.ResponseWriter, r *http.Request) {
 	h.c.song.Remaining = int(remaining.Seconds())
 	fmt.Println("Time remaining: ", remaining.Seconds())
 
-	fmt.Println("Endpoint Hit: returnApi")
+	if remaining.Seconds() < 0 {
+		fmt.Println(time.Now(), r.RequestURI, "Song duration expired.")
+		http.Error(w, "API Unavailable", 503)
+		return
+	}
+
+	fmt.Println(time.Now(), r.RequestURI, "Served api request.")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Output json
