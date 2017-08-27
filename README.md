@@ -3,6 +3,10 @@
 [![Docker Repository on Quay](https://quay.io/repository/xtradio/xtradio-api/status "Docker Repository on Quay")](https://quay.io/repository/xtradio/xtradio-api)
 
 XTRadio JSON Api to retrieve currently playing song
+## Build instructions
+
+Build using :
+``` CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/xtradio-api . ```
 
 ## Golang tutorials
 
