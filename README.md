@@ -1,5 +1,7 @@
 # xtradio-api
 
+[![Docker Repository on Quay](https://quay.io/repository/xtradio/xtradio-api/status "Docker Repository on Quay")](https://quay.io/repository/xtradio/xtradio-api)
+
 XTRadio JSON Api to retrieve currently playing song
 
 ## Golang tutorials
