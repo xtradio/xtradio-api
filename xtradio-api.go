@@ -44,7 +44,7 @@ type songsHandler struct {
 
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "XTRadio API.")
-	fmt.Println("Endpoint Hit: homePage")
+	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
 }
 
 func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
@@ -89,8 +89,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 		song.Length = 0
 		song.Share = ""
 		song.URL = ""
-
-		fmt.Println(time.Now(), "Scan not found.")
+		fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Scan not found.")
 	}
 
 	if song.Image == "" {
@@ -109,6 +108,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	defer h.c.Unlock()
 	h.c.song = song
 	h.c.duration = duration
+	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
 }
 
 func (h songsHandler) returnSongs(w http.ResponseWriter, r *http.Request) {
@@ -121,16 +121,16 @@ func (h songsHandler) returnSongs(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Time remaining: ", remaining.Seconds())
 
 	if remaining.Seconds() < 0 {
-		fmt.Println(time.Now(), r.RequestURI, "Song duration expired.")
+		fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Song duration expired.")
 		http.Error(w, "API Unavailable", 503)
 		return
 	}
-
-	fmt.Println(time.Now(), r.RequestURI, "Served api request.")
+	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Served api request.")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Output json
 	json.NewEncoder(w).Encode(h.c.song)
+	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
 }
 
 func publishAPI() {
