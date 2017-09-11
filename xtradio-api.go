@@ -32,19 +32,48 @@ type Duration struct {
 	Finished time.Time
 }
 
+// Status of the mountpoints
+type Status struct {
+	HighStatus string `json:"highstatus"`
+	MidStatus  string `json:"midstatus"`
+	LowStatus  string `json:"lowstatus"`
+}
+
 type cache struct {
 	sync.RWMutex
 	song     Song
 	duration Duration
+	status   Status
 }
 
 type songsHandler struct {
 	c *cache
 }
 
+type statusHandler struct {
+	c *cache
+}
+
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "XTRadio API.")
 	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
+}
+
+func (h statusHandler) readStatus(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	var status Status
+
+	if vars["mount"] == "high" {
+		status.HighStatus = vars["status"]
+	} else if vars["mount"] == "mid" {
+		status.MidStatus = vars["status"]
+	} else if vars["mount"] == "low" {
+		status.LowStatus = vars["status"]
+	}
+
+	fmt.Println(time.Now(), r.RequestURI, "Mount ", vars["mount"], " is ", vars["status"])
+
+	h.c.status = status
 }
 
 func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
@@ -111,6 +140,14 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
 }
 
+func (h statusHandler) returnStatus(w http.ResponseWriter, r *http.Request) {
+	h.c.RLock()
+	defer h.c.RUnlock()
+	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Served status api request.")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	json.NewEncoder(w).Encode(h.c.status)
+}
+
 func (h songsHandler) returnSongs(w http.ResponseWriter, r *http.Request) {
 	h.c.RLock()
 	defer h.c.RUnlock()
@@ -137,10 +174,15 @@ func publishAPI() {
 	apiRouter := mux.NewRouter().StrictSlash(true)
 	apiRouter.HandleFunc("/", homePage)
 	sh := songsHandler{c: &cache{}}
+	rs := statusHandler{c: &cache{}}
 	apiRouter.HandleFunc("/api", sh.returnSongs)
+	apiRouter.HandleFunc("/api/status/", rs.returnStatus)
 	apiRouter.HandleFunc("/post/song", sh.readPost).
 		Name("putsong").
 		Queries("file", "{file}")
+	apiRouter.HandleFunc("/post/status/{mount}", rs.readStatus).
+		Name("putstatus").
+		Queries("status", "{status}")
 
 	log.Fatal(http.ListenAndServe(":10000", apiRouter))
 }
