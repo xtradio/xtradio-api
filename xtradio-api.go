@@ -163,7 +163,7 @@ func sendTweet(message string) {
 	println(message)
 	tweet, resp, err := client.Statuses.Update(message, nil)
 	if err != nil {
-		fmt.Println("Tweet not sent", tweet, resp)
+		fmt.Println("Tweet not sent", tweet, resp, err)
 	}
 }
 
