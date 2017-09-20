@@ -156,7 +156,8 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	httpClient := config.Client(oauth1.NoContext, token)
 
 	client := twitter.NewClient(httpClient)
-	message := "♪ #np " + song.Artist + " - " + song.Title + " " + song.Share
+	var message = "♪ #np " + song.Artist + " - " + song.Title + " " + song.Share
+	println(message)
 	tweet, resp, err := client.Statuses.Update(message, nil)
 	if err != nil {
 		fmt.Println("Tweet not sent", tweet, resp)
