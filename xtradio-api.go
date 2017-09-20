@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/dghubble/go-twitter/twitter"
+	"github.com/dghubble/oauth1"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
@@ -138,6 +141,26 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	h.c.song = song
 	h.c.duration = duration
 	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
+
+	consumerKey := os.Getenv("TWITTER_CONSUMER_KEY")
+	consumerSecret := os.Getenv("TWITTER_CONSUMER_SECRET")
+	accessToken := os.Getenv("TWITTER_ACCESS_TOKEN")
+	accessSecret := os.Getenv("TWITTER_ACCESS_SECRET")
+	if consumerKey == "" || consumerSecret == "" || accessToken == "" || accessSecret == "" {
+		panic("Missing required environment variable")
+	}
+	config := oauth1.NewConfig(consumerKey, consumerSecret)
+	token := oauth1.NewToken(accessToken, accessSecret)
+
+	// httpClient will automatically authorize http.Request's
+	httpClient := config.Client(oauth1.NoContext, token)
+
+	client := twitter.NewClient(httpClient)
+	message := "♪ #np " + song.Artist + " - " + song.Title + " " + song.Share
+	tweet, resp, err := client.Statuses.Update(message, nil)
+	if err != nil {
+		fmt.Println("Tweet not sent", tweet, resp)
+	}
 }
 
 func (h statusHandler) returnStatus(w http.ResponseWriter, r *http.Request) {
