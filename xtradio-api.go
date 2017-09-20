@@ -136,12 +136,16 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 
 	defer db.Close()
 
+	sendTweet("♪ #np " + song.Artist + " - " + song.Title + " " + song.Share)
+
 	h.c.Lock()
 	defer h.c.Unlock()
 	h.c.song = song
 	h.c.duration = duration
 	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
+}
 
+func sendTweet(message string) {
 	consumerKey := os.Getenv("TWITTER_CONSUMER_KEY")
 	consumerSecret := os.Getenv("TWITTER_CONSUMER_SECRET")
 	accessToken := os.Getenv("TWITTER_ACCESS_TOKEN")
@@ -156,7 +160,6 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	httpClient := config.Client(oauth1.NoContext, token)
 
 	client := twitter.NewClient(httpClient)
-	var message = "♪ #np " + song.Artist + " - " + song.Title + " " + song.Share
 	println(message)
 	tweet, resp, err := client.Statuses.Update(message, nil)
 	if err != nil {
