@@ -136,7 +136,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 
 	defer db.Close()
 
-	sendTweet("NP " + song.Artist + " - " + song.Title + " " + song.Share)
+	sendTweet("♪ #np " + song.Artist + " - " + song.Title + " " + song.Share)
 
 	h.c.Lock()
 	defer h.c.Unlock()
