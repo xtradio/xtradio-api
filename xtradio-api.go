@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -173,6 +174,16 @@ func tuneinAPI(artist string, title string) {
 	URL.RawQuery = parameters.Encode()
 
 	fmt.Printf("Encoded URL is %q\n", URL.String())
+	res, err := http.Get(URL.String())
+	if err != nil {
+		fmt.Println(err)
+	}
+	robots, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Printf("%s", robots)
 }
 
 func sendTweet(message string) {
@@ -181,7 +192,7 @@ func sendTweet(message string) {
 	accessToken := os.Getenv("TWITTER_ACCESS_TOKEN")
 	accessSecret := os.Getenv("TWITTER_ACCESS_SECRET")
 	if consumerKey == "" || consumerSecret == "" || accessToken == "" || accessSecret == "" {
-		panic("Missing required environment variable")
+		fmt.Println(time.Now(), "Missing required environment variable")
 		return
 	}
 	config := oauth1.NewConfig(consumerKey, consumerSecret)
@@ -191,10 +202,10 @@ func sendTweet(message string) {
 	httpClient := config.Client(oauth1.NoContext, token)
 
 	client := twitter.NewClient(httpClient)
-	println(message)
+	fmt.Println(time.Now(), "Tweet sent: "+message)
 	tweet, resp, err := client.Statuses.Update(message, nil)
 	if err != nil {
-		fmt.Println("Tweet not sent", tweet, resp, err)
+		fmt.Println(time.Now(), "Tweet not sent", tweet, resp, err)
 	}
 }
 
