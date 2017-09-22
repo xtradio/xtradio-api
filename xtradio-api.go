@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -137,12 +138,41 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	sendTweet("♪ #np " + song.Artist + " - " + song.Title + " " + song.Share)
+	tuneinAPI(song.Artist, song.Title)
 
 	h.c.Lock()
 	defer h.c.Unlock()
 	h.c.song = song
 	h.c.duration = duration
 	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
+}
+
+func tuneinAPI(artist string, title string) {
+
+	partnerid := os.Getenv("TUNEIN_PARTNER_ID")
+	partnerkey := os.Getenv("TUNEIN_PARTNER_KEY")
+	stationid := os.Getenv("TUNEIN_STATION_ID")
+	if partnerid == "" || partnerkey == "" || stationid == "" {
+		fmt.Println(time.Now(), "No tunein creds, skipping.")
+		return
+	}
+
+	var URL *url.URL
+	URL, err := url.Parse("http://air.radiotime.com/Playing.ashx?")
+	if err != nil {
+		fmt.Println(time.Now(), "Tunein URL unavailable")
+		return
+	}
+
+	parameters := url.Values{}
+	parameters.Add("partnerId", partnerid)
+	parameters.Add("partnerKey", partnerkey)
+	parameters.Add("stationid", stationid)
+	parameters.Add("artist", artist)
+	parameters.Add("title", title)
+	URL.RawQuery = parameters.Encode()
+
+	fmt.Printf("Encoded URL is %q\n", URL.String())
 }
 
 func sendTweet(message string) {
@@ -152,6 +182,7 @@ func sendTweet(message string) {
 	accessSecret := os.Getenv("TWITTER_ACCESS_SECRET")
 	if consumerKey == "" || consumerSecret == "" || accessToken == "" || accessSecret == "" {
 		panic("Missing required environment variable")
+		return
 	}
 	config := oauth1.NewConfig(consumerKey, consumerSecret)
 	token := oauth1.NewToken(accessToken, accessSecret)
