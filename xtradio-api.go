@@ -211,7 +211,6 @@ func (h statusHandler) returnStatus(w http.ResponseWriter, r *http.Request) {
 	h.c.RLock()
 	defer h.c.RUnlock()
 	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Served status api request.")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(h.c.status)
 }
 
@@ -230,7 +229,6 @@ func (h songsHandler) returnSongs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Served api request.")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Output json
 	json.NewEncoder(w).Encode(h.c.song)
