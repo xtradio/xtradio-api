@@ -168,7 +168,7 @@ func tuneinAPI(artist string, title string) {
 	parameters := url.Values{}
 	parameters.Add("partnerId", partnerid)
 	parameters.Add("partnerKey", partnerkey)
-	parameters.Add("stationid", stationid)
+	parameters.Add("id", stationid)
 	parameters.Add("artist", artist)
 	parameters.Add("title", title)
 	URL.RawQuery = parameters.Encode()
