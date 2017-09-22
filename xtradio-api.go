@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -178,12 +177,11 @@ func tuneinAPI(artist string, title string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	robots, err := ioutil.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		fmt.Println(err)
+	if res.StatusCode == 200 {
+		fmt.Println(time.Now(), "TuneIn: "+artist+" - "+title)
+	} else {
+		fmt.Println(time.Now(), "Tunein submission failed.")
 	}
-	fmt.Printf("%s", robots)
 }
 
 func sendTweet(message string) {
