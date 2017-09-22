@@ -221,7 +221,7 @@ func (h songsHandler) returnSongs(w http.ResponseWriter, r *http.Request) {
 
 	// Calculate remaining seconds in real time
 	remaining := time.Until(h.c.duration.Finished)
-	h.c.song.Remaining = int(remaining.Seconds())
+	h.c.song.Remaining = int(remaining.Seconds() + 5)
 	fmt.Println("Time remaining: ", remaining.Seconds())
 
 	if remaining.Seconds() < 0 {
