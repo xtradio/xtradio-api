@@ -15,11 +15,10 @@ inputs:
   - name: xtradio-api-git
 
 outputs:
-  - name: binary
+  - name: /bin/xtradio-api
 
 run:
   path: sh
   args:
   - -exc
-  - find .
-  - go build -a -installsuffix cgo -o bin/xtradio-api /xtradio-api-git/
+  - go build -a -installsuffix cgo -o /bin/xtradio-api /xtradio-api-git/
