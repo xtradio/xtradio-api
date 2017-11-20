@@ -24,4 +24,6 @@ run:
   - -exc
   - |
     env
-    go build -v -i -a -installsuffix cgo -o ./bin/xtradio-api ./xtradio-api-git/
+    cd ./xtradio-api-git
+    got get
+    go build -v -i -a -installsuffix cgo -o ../bin/xtradio-api .
