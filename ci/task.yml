@@ -21,4 +21,6 @@ run:
   path: sh
   args:
   - -exc
-  - go build -a -installsuffix cgo -o /bin/xtradio-api /xtradio-api-git/
+  - cd /xtradio-api-git
+  - |
+  - go build -a -installsuffix cgo -o /bin/xtradio-api .
