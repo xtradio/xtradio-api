@@ -1,6 +1,7 @@
 # xtradio-api
 
-XTRadio JSON Api to retrieve currently playing song
+XTRadio JSON Api to retrieve currently playing song and additional metadata
+
 ## Build instructions
 
 Build using :
