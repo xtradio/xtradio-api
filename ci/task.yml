@@ -25,5 +25,5 @@ run:
   - |
     env
     cd ./xtradio-api-git
-    got get
+    go get
     go build -v -i -a -installsuffix cgo -o ../bin/xtradio-api .
