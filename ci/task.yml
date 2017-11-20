@@ -23,7 +23,7 @@ run:
   args:
   - -exc
   - |
-    pkg add git
+    apk add git
     env
     cd ./xtradio-api-git
     go get
