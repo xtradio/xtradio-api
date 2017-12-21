@@ -88,7 +88,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(time.Now(), r.RequestURI, "Reading post message for song.", vars["file"])
 
 	// Open and connect do DB
-	db, err := sql.Open("mysql", "root:test@tcp(172.17.0.5:3306)/radio?charset=utf8")
+	db, err := sql.Open("mysql", "root:test@tcp(172.17.0.4:3306)/radio?charset=utf8")
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		fmt.Println("Ping database failed.", err)
@@ -139,6 +139,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 
 	sendTweet("♪ #np " + song.Artist + " - " + song.Title + " " + song.Share)
 	tuneinAPI(song.Artist, song.Title)
+	// logSong(vars["file"])
 
 	h.c.Lock()
 	defer h.c.Unlock()
@@ -224,9 +225,8 @@ func (h songsHandler) returnSongs(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Time remaining: ", remaining.Seconds())
 
 	if remaining.Seconds() < 0 {
-		fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Song duration expired.")
-		http.Error(w, "API Unavailable", 503)
-		return
+		fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Song duration expired - Faking time.")
+		h.c.song.Remaining = 10
 	}
 	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Served api request.")
 
