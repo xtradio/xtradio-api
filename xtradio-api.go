@@ -58,7 +58,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(time.Now(), r.RequestURI, "Reading post message for song.", vars["file"])
 
 	// Open and connect do DB
-	db, err := sql.Open("mysql", "root:test@tcp(172.17.0.4:3306)/radio?charset=utf8")
+	db, err := sql.Open("mysql", "root:test@tcp(172.17.0.5:3306)/radio?charset=utf8")
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		fmt.Println("Ping database failed.", err)
