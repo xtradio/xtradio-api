@@ -73,6 +73,28 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Add raw data in to database
+	// insert
+	stmt, err := db.Prepare("INSERT INTO playlist (artist, title, filename, song, datum, time) VALUES (?, ?, ?, ?, ?, ?)")
+	if err != nil {
+		fmt.Println(time.Now(), "Prepare of SQL statement failed", err)
+		return
+	}
+
+	res, err := stmt.Exec(vars["artist"], vars["title"], vars["file"], vars["title"], time.Now().Local().Format("2006-01-02"), time.Now().Local().Format("18:00:00"))
+	if err != nil {
+		fmt.Println(time.Now(), "Adding data in to playlist failed", err)
+		return
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		fmt.Println(time.Now(), "Error fetching last inserted ID", err)
+		return
+	}
+
+	fmt.Println(time.Now(), "Inserted last played song with id: ", id)
+
 	// Fetch details for the track
 	query := db.QueryRow("SELECT artist, title, album, lenght, share, url, image FROM details WHERE filename=?", vars["file"])
 
