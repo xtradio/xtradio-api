@@ -1,15 +1,15 @@
 language: go
 services:
-  - docker
+- docker
 go:
-  - '1.9'
+- '1.9'
 branches:
   only:
   - master
 env:
   global:
-  - secure: YYH/xrFAgf8gSynm9QqQsx2PRHxJ/ZX2KTOlq0aDacRVrtP7CeCCWn9U2VqRLr0DEFsIF6gozc1mxbuZ/GMXRux2t+SS9Z8sRLGbo081etg69Ds6OLqdZGozfkUbUGDDOu4tyM8G/B15pDOSag5F86mPZr3JSI14ORWX79c6llEciS1a8WKTSLcTYSQV1XbPqgRYxoSSbTqJ6lLfybXgRUaK5wefxOiavvZrXTRfdpXSCsCkcNraRu+boYkd7z/EC5mb5GlRe+ADDkfLykKSdXHcUSk7qIPo0g9fwar3Vn2B96l5T2hgPK87qxPB+RDlg6rY8TZKm+GvGwvWS1wZnqzzCrCQg/nnUlZfMnNBmTxzNTo2I9ABqhpFMDB4wVaSuxBXYygzVEthrWDBD05YiV3oAfXMvZCZl4sFjEINFki1MmV8QzHsw+DpVd3WgtpshZHPSFsfK8hnlHD9IwHlcqMq/jzy1KPELKaIvObK1tkBA9GawRPWZmFA30O6cH5uU/jFfKE7VcIKQLWt/GqsFRVygDl26DkgN4QQV+LoZbmhhPx/bAg46LFdpIljIShWRHV+B6qf3o8ouMGXyOXKLd/EebpTc1wb21ho65MSKv+jgaX5xRj3MHBL2uk/M/nQN3x3bKz50CIyb+F9pRZ6YQcFpmK3HbXNwJOzwv1QQmA=
-  - secure: XLTfPtt5RWWqpMFWCr0ZCvKLljh3DFIHoC9pghA1GlU2m4geijGB1dwABkNc26IdbgD0CxYZYxyawIRR1xq68jbn52ki9uE9IAK2EPhZvxCTVG1quM6z+lrLyKJlOB7Xkmu/saz6iopHn+Lnor2tizzQg8YgYTYYNAntkIWl7ZfcjAYYPgwhTH/7DUoKfHPtnwBlkyanrZy5XA+UCpOYzzrA+Qzier8rA5A1zyzf3Gc/eMI+sfOVZk2L65wlzVEO0l+O4febd4imO7Bd4DgaR2lbJdBgUz6r7ZeQ4ieQjfxRNN2z8mtgS0lDpswahh4SsCQWzxCbcYsgIodFvwKshfGpDS46tF+x1QufLDGq+4YEclwptsb5wVJQq8MmOTfvbmbWFVUGCtU7FOaGi8bu5qDI/fJIhuRiv6ryeiByfrt9bFK50HT2HVvQZ/hpyeJ0PO5aYRS+OSbLXE5tPyqPzspq+TH7NacPInfF8SBghrORK5qHc+ntf065B4+sWPypMW2e683r+6fMGz0VAiPcEmLsROn8i1yeUQKhsITcWwXwsi9SjN2pR9B8FYkr0phpDeMG4hoeksX+mz7yURuFiO/tmucNGuBh8WUZLNCJr9phogqnDBC2nhHDUJ0GjwmYP99V8wWCYXuJyMlxPaFlDE+e7UUNdzco44Ag5fxaZtE=
+  - secure: fxqjg2hIaYfP8ETyVp2hEf3bCsKK3wuTb+rWufrLsZPl1Afy8ahx9sBqzSI+crlzGpRrKzKllkYhiEyL6Uy71Aqrp8rrv+gOCqORY/xYqDhf7D0yx3Vr2pPXevGIBK52j0LrRYwcuq/xWxPc6NQjrSyD7HaY9QBUJDSjfue18fB2614JzHlYte/uEjt3aZpgvu3TLJEHjcnV7RuwGPzWugngephaoMGtdNyurIpCwl6ronFxT+k7EQ2T0bWaqL90NWBYP7m08medY107z8/Q2Qf2WhdUIAls12EsKHzaiNkSo1OrRpT+CuK8PVh9y+dnHuU3KapaPgjARTUTdP1Blvrs/1UAN/YMNnXcoFSFblxIcMAF++oyVGH+K6rgQmWiGzuquQbcxAy1313iiZrvBblC4CSItCJkT4jTJtTkeTCsE3aDACEeoJ1fq9gJ2N2OVtqQwwleXOngMuw7FJJ7fRRrk1BUT47OAU50H3awJnWAm9IW0Dk3eine3/ImeVomLBCDaaPjBBlPbPNqsAixNfA1x/4LIoZgHbcEHjkm3L0yXKVIQXA8PpdvZ0MaZtAwnqSaybskVblH77N7Ki/oZJTexHGjThK+tX8aTbBzOp3Yjd1rxBqdxMe2bfaNEPbRLhEockeREwbeXv7tpp093XNAob1EvzE/IA1T+tADbr8=
+  - secure: FHEATgtecmfjhZWsO7Q5X/kfRihVwEclfKplHpD1Y1rD2NNP/VIT7gaCuHaEIxg9jpoZBs6/xwVGZqvAphq42vfAyR5QB8YViz9+82qG+9T2ZKnVZKA4D9XdytAqMSJ5XdmbU4vbi1CDynaL7mChc7vDOly4K4CohvHTUuBtXKTmwbFYJj4ggbAu1fJBAzKvy338lGxWlMFWulCstQshpCD5JmOHaojRnuJZUG4wyoRwpKt+/7wcIjBxy/eMoGzkqEYJiAghdhxO4TzFdKHcjkV0E6sHzoCAPe6spGgMQotho++uSeHkfVrozWztBb8GY14wbmHmk3kfum1cw2Ku498+KoqsXrfFbsGGSuUfursoKAQSr0dRd6Hfr5zCGHB+XunSuHXi1wPlCjE00BF8nu/k8D8BhebtEMfOOaEtW/7wSe8oh0Z4N42PzgjcmTQDjA972l9UpF7c/4hpT17ke5yJQyhO9KxEkSasUnsFz0Q3ywMCrO3t3vYBRfaum2NSwPk9GgmzzQux8eIXOZINAM3djBlJ2OnJXE0Nn0pmLX5vRioDQ/wgt21jMsmf4ggZ+W5e78au86+MdOmzRkzJLUdggel2CPJgl+6tPiROTEUa7hYP3/9nqlYEMVurylEw2tqZ2SyOElNrS29tPjmVL0es8Qvrf0tTt3ZVsRK8ftg=
   - COMMIT=${TRAVIS_COMMIT::8}
 notifications:
   email: false
@@ -18,11 +18,12 @@ notifications:
     on_failure: always
     secure: 0Toa67ZJrxFt3nJMFuUVO4tyB32Kj8hQ3MwDqGgGvqUNUM2R1/EQJtEmHqJMqvQ9X5I4J3vnfSVr815W3y7Mh9WBkr/sgTumlDo2nLwrQAYuFVd0yimuDKmOJ5ZgQA6W7vcECQ8wqLfDOA14RPXIg//mHAgCeI5dj/SfUYq5LsmFpoJj5SndrrKp1KMIcfkPqKDws8GmCxDe5B4ztJriQmuVa8wWYlxluGhn/2r6NbaIGJ9NarcSkpbTHUkh5qv5OZD4JQ2bu6s7S/RqYpHVe52RONDjTHkec+uwcjq+rU5W7/fB91QRUAM5qDmM1sfuauTa8KsUWTKbkByKxckZnFqvaUhK8dQmr+M9RnKns7mVkGq1p+GSGi2chVKvF15cZdVsF6qO6WR1R6khkDZLbSaU5eLljIg3flFMzHsDujmuqv7TgWXeFpO99vXUKoJEbyPxEur7gZpMXAIP6IoNns3kYdVY3xkmWQIUgUouefc4kBam46zppWaHfFinZ4u0NB+Cy6XzrKbJbboi99dmL5XDgUCouVh8701z9k5rpj7NowqNE13/dooXhc76dn9cYU7SrAFgGqy0RkzKNs2Yhqhvhf8PiTQwhah9ujbygIE6QLfwhydVbZr32EBrgqVMp4JYkVK31XfeuGLkVA9Oq2pyNJg+RqvgfCgDfKk2hWg=
 after_success:
-  - CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/xtradio-api .
-  - docker login -u $DOCKER_USER -p $DOCKER_PASS
-  - export REPO=xtradio/api
-  - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH; fi`
-  - docker build -f Dockerfile -t $REPO:latest .
-  - docker tag $REPO:$COMMIT $REPO:$TAG
-  - docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
-  - docker push $REPO
+- CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/xtradio-api .
+- docker login -u $DOCKER_USER -p $DOCKER_PASS
+- export REPO=xtradio/api
+- export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH;
+  fi`
+- docker build -f Dockerfile -t $REPO:latest .
+- docker tag $REPO:$COMMIT $REPO:$TAG
+- docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
+- docker push $REPO
