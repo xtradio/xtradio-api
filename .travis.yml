@@ -19,7 +19,7 @@ notifications:
     secure: 0Toa67ZJrxFt3nJMFuUVO4tyB32Kj8hQ3MwDqGgGvqUNUM2R1/EQJtEmHqJMqvQ9X5I4J3vnfSVr815W3y7Mh9WBkr/sgTumlDo2nLwrQAYuFVd0yimuDKmOJ5ZgQA6W7vcECQ8wqLfDOA14RPXIg//mHAgCeI5dj/SfUYq5LsmFpoJj5SndrrKp1KMIcfkPqKDws8GmCxDe5B4ztJriQmuVa8wWYlxluGhn/2r6NbaIGJ9NarcSkpbTHUkh5qv5OZD4JQ2bu6s7S/RqYpHVe52RONDjTHkec+uwcjq+rU5W7/fB91QRUAM5qDmM1sfuauTa8KsUWTKbkByKxckZnFqvaUhK8dQmr+M9RnKns7mVkGq1p+GSGi2chVKvF15cZdVsF6qO6WR1R6khkDZLbSaU5eLljIg3flFMzHsDujmuqv7TgWXeFpO99vXUKoJEbyPxEur7gZpMXAIP6IoNns3kYdVY3xkmWQIUgUouefc4kBam46zppWaHfFinZ4u0NB+Cy6XzrKbJbboi99dmL5XDgUCouVh8701z9k5rpj7NowqNE13/dooXhc76dn9cYU7SrAFgGqy0RkzKNs2Yhqhvhf8PiTQwhah9ujbygIE6QLfwhydVbZr32EBrgqVMp4JYkVK31XfeuGLkVA9Oq2pyNJg+RqvgfCgDfKk2hWg=
 after_success:
 - CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/xtradio-api .
-- docker login -u $DOCKER_USER -p $DOCKER_PASS
+- docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
 - export REPO=xtradio/api
 - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH;
   fi`
