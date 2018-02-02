@@ -1,6 +1,6 @@
 # xtradio-api
 
-https://travis-ci.org/xtradio/xtradio-api.svg?branch=master
+[![Build Status](https://travis-ci.org/xtradio/xtradio-api.svg?branch=master)](https://travis-ci.org/xtradio/xtradio-api)
 
 XTRadio JSON Api to retrieve currently playing song and additional metadata.
 
