@@ -1,5 +1,7 @@
 # xtradio-api
 
+https://travis-ci.org/xtradio/xtradio-api.svg?branch=master
+
 XTRadio JSON Api to retrieve currently playing song and additional metadata.
 
 ## Build instructions
