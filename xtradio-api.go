@@ -81,7 +81,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := stmt.Exec(vars["artist"], vars["title"], vars["file"], vars["title"], time.Now().Local().Format("2006-01-02"), time.Now().Local().Format("18:00:00"))
+	res, err := stmt.Exec(vars["artist"], vars["title"], vars["file"], vars["title"], time.Now().Local().Format("2006-01-02"), time.Now().Local().Format("15:04:05"))
 	if err != nil {
 		fmt.Println(time.Now(), "Adding data in to playlist failed", err)
 		return
