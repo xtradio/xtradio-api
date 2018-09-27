@@ -18,11 +18,6 @@ notifications:
     on_failure: always
     secure: QGX/KihrhG2fi1PkvXimOjhXbUVF1PNCzqPqz/zTfbOga6O08G8MkW72VBWHkqhI7uWteJB3Pj0nMNGH9+/5pHBSlzwohz6zbetHypt0S7UFjH4Yc8aXQXAWO5Z7NKTCDaIW3E+uPuigODy84xOf21dzl08xNOOWx2xMHA53iXOG4ceX3faAM6kQCTCIPrxqFRiXKwn1HDWa7BjYGdYgQZzI6/6TWBsc0K+phvqVRQ0zGDQh84e0oOLhNxNUMvt6q0CCiLOQC6mTMEPmpESRkcBgNj/s9wEcKHnfTRcoLne6UFdoHCOOTbUSavZnTo2AkIvpbK6uwTZHz/J7A0EEkTNbwQgBgFpYcG4vRX5MWmHXnusIHh5GkNLzTmR9Xsdv24xsuA0D8XFXGDYvuqobVkbd4PivuCAqvn5ynHzqQWepr4sx6Atx+q2aArm1g0Rrk01XoTlL3sW1SgP7vbdUnPe/PNgMMOA27yWjAbOByXGrteKTy5ZeFEoIvIhWhWO9d2Tho3pQbpwDfG/PlLXwWj3PdeEc5njDCAWI2xhzpI53JQe+cwslMzO0xPFrCZP9nfyf0yukHmyJ+hmkSh8nLuUtpxKFBq+NkTZTtGH9cfFg8TwoT2m6PVT55BEPsTLNeB7lTS0eNr4Sh7AX+IKYCDKa2+4OyaAKWy+lN2HzZ9E=
 after_success:
-- CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/xtradio-api .
-- docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD"
-- export REPO=xtradio/api
-- export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH;
-  fi`
 - docker build -f Dockerfile -t $REPO:latest .
 - docker tag $REPO:$COMMIT $REPO:$TAG
 - docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
