@@ -14,6 +14,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 // Song details
@@ -345,7 +346,12 @@ func publishAPI() {
 		Name("putsong").
 		Queries("file", "{file}", "artist", "{artist}", "title", "{title}")
 
-	log.Fatal(http.ListenAndServe(":10000", apiRouter))
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowCredentials: true,
+	})
+
+	log.Fatal(http.ListenAndServe(":10000", c.Handler(apiRouter)))
 }
 
 func checkErr(err error) {
