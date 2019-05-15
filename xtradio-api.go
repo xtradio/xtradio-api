@@ -275,8 +275,13 @@ func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
 
 func songList(w http.ResponseWriter, r *http.Request) {
 	var v struct {
-		Data []SongDetails `json:"data"`
+		Data  []SongDetails `json:"data"`
+		Total int64         `json:"total"`
 	}
+
+	var (
+		count int64
+	)
 
 	connection := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8", os.Getenv("MYSQL_USERNAME"), os.Getenv("MYSQL_PASSWORD"), os.Getenv("MYSQL_HOST"), os.Getenv("MYSQL_DATABASE"))
 	// Open and connect do DB
@@ -305,6 +310,8 @@ func songList(w http.ResponseWriter, r *http.Request) {
 
 	defer rows.Close()
 
+	count = 0
+
 	for rows.Next() {
 		var s SongDetails
 
@@ -315,7 +322,9 @@ func songList(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		v.Data = append(v.Data, s)
+		count = count + 1
 	}
+	v.Total = count
 	fmt.Println(v)
 	p, err := json.Marshal(v)
 	if err != nil {
