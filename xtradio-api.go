@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -32,12 +33,12 @@ type Song struct {
 
 type SongDetails struct {
 	Id     int64  `json:"id"`
-	Title  string `json:"song"`
+	Title  string `json:"title"`
 	Artist string `json:"artist"`
 	Show   string `json:"show"`
 	Image  string `json:"image"`
 	Album  string `json:"album"`
-	Length string `json:"length"`
+	Length string `json:"lenght"`
 	Share  string `json:"share"`
 	URL    string `json:"url"`
 }
@@ -275,6 +276,7 @@ func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
 }
 
 func songList(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
 	var v struct {
 		Data  []SongDetails `json:"data"`
 		Total int64         `json:"total"`
@@ -301,8 +303,28 @@ func songList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sort := strings.Split(vars["sort"], ",")
+	sort0 := strings.Trim(sort[0], "[")
+	sort1 := strings.Trim(sort[1], "]")
+	row := strings.Replace(sort0, "\"", "", -1)
+	order := strings.Replace(sort1, `"`, ``, -1)
+
+	rangeminmax := strings.Split(vars["range"], ",")
+	min, err := strconv.ParseInt(strings.Trim(rangeminmax[0], "["), 10, 64)
+	if err != nil {
+		fmt.Println("Error changing min string to int64 ", err)
+		return
+	}
+	max, err := strconv.ParseInt(strings.Trim(rangeminmax[1], "]"), 10, 64)
+	if err != nil {
+		fmt.Println("Error changing max string to int64 ", err)
+		return
+	}
+
+	query := fmt.Sprintf("SELECT id, artist, title, album, lenght, share, url, image FROM details ORDER BY %s %s", row, order)
+	fmt.Println(query)
 	// Fetch details for the track
-	rows, err := db.Query("SELECT id, artist, title, album, lenght, share, url, image FROM details")
+	rows, err := db.Query(query)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		fmt.Println("Fetching rows failed.", err)
@@ -322,11 +344,12 @@ func songList(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Fetching item failed.", err)
 			return
 		}
-		v.Data = append(v.Data, s)
+		if (count >= min) && (count <= max) {
+			v.Data = append(v.Data, s)
+		}
 		count = count + 1
 	}
 	v.Total = count
-	fmt.Println(v)
 	p, err := json.Marshal(v)
 	if err != nil {
 		fmt.Println("Error on defining json", err)
@@ -341,7 +364,8 @@ func publishAPI() {
 	apiRouter.HandleFunc("/", homePage)
 	sh := songsHandler{c: &cache{}}
 	apiRouter.HandleFunc("/api", sh.returnSongs)
-	apiRouter.HandleFunc("/v1/np/", sh.nowplaying)
+	apiRouter.HandleFunc("/v1/song/list/Songs", songList).
+		Queries("sort", "{sort}", "range", "{range}", "filter", "{filter}")
 	apiRouter.HandleFunc("/post/song", sh.readPost).
 		Name("putsong").
 		Queries("file", "{file}", "artist", "{artist}", "title", "{title}")
