@@ -284,6 +284,7 @@ func songList(w http.ResponseWriter, r *http.Request) {
 
 	var (
 		count int64
+		query string
 	)
 
 	connection := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8", os.Getenv("MYSQL_USERNAME"), os.Getenv("MYSQL_PASSWORD"), os.Getenv("MYSQL_HOST"), os.Getenv("MYSQL_DATABASE"))
@@ -321,7 +322,15 @@ func songList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := fmt.Sprintf("SELECT id, artist, title, album, lenght, share, url, image FROM details ORDER BY %s %s", row, order)
+	if vars["filter"] != "{}" {
+		searchQuery1 := strings.Split(vars["filter"], ":")
+		searchQuery2 := strings.Trim(searchQuery1[1], "}")
+		searchQuery := "'%" + strings.Replace(searchQuery2, "\"", "", -1) + "%'"
+		query = fmt.Sprintf("SELECT id, artist, title, album, lenght, share, url, image FROM details WHERE artist LIKE %s ORDER BY %s %s ", searchQuery, row, order)
+	} else {
+		query = fmt.Sprintf("SELECT id, artist, title, album, lenght, share, url, image FROM details ORDER BY %s %s", row, order)
+	}
+
 	fmt.Println(query)
 	// Fetch details for the track
 	rows, err := db.Query(query)
@@ -364,7 +373,7 @@ func publishAPI() {
 	apiRouter.HandleFunc("/", homePage)
 	sh := songsHandler{c: &cache{}}
 	apiRouter.HandleFunc("/api", sh.returnSongs)
-	apiRouter.HandleFunc("/v1/song/list/Songs", songList).
+	apiRouter.HandleFunc("/v1/song/list", songList).
 		Queries("sort", "{sort}", "range", "{range}", "filter", "{filter}")
 	apiRouter.HandleFunc("/post/song", sh.readPost).
 		Name("putsong").
