@@ -36,18 +36,6 @@ type Song struct {
 	URL       string `json:"url"`
 }
 
-type SongDetails struct {
-	Id     int64  `json:"id"`
-	Title  string `json:"title"`
-	Artist string `json:"artist"`
-	Show   string `json:"show"`
-	Image  string `json:"image"`
-	Album  string `json:"album"`
-	Length string `json:"lenght"`
-	Share  string `json:"share"`
-	URL    string `json:"url"`
-}
-
 // Duration of the song
 type Duration struct {
 	Finished time.Time
