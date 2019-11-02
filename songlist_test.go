@@ -4,9 +4,9 @@ import (
 	"testing"
 )
 
-func TestSplitSort(t *testing.T) {
+func TestSplitSortSuccess(t *testing.T) {
 	vars := "[\"test\",\"DESC\"]"
-	testRow, testOrder, err := splitSort(vars)
+	testRow, testOrder, _ := splitSort(vars)
 
 	if testRow != "test" {
 		t.Errorf("Return was incorrect, got: %s, want: %s", testRow, "test")
@@ -15,13 +15,22 @@ func TestSplitSort(t *testing.T) {
 	if testOrder != "DESC" {
 		t.Errorf("Return was incorrect, got: %s, want: %s", testOrder, "DESC")
 	}
+}
 
-	if err != nil {
-		t.Errorf("Error was returned")
+func TestSplitSortFail(t *testing.T) {
+	vars := "test"
+	testRow, testOrder, _ := splitSort(vars)
+
+	if testRow != "" {
+		t.Errorf("We expected an empty response, we got: %s", testRow)
+	}
+
+	if testOrder != "" {
+		t.Errorf("We expected an empty response, we got: %s", testOrder)
 	}
 }
 
-func TestSplitRange(t *testing.T) {
+func TestSplitRangeSuccess(t *testing.T) {
 	vars := "[0,1]"
 
 	testMin, testMax, err := splitRange(vars)
@@ -36,5 +45,35 @@ func TestSplitRange(t *testing.T) {
 
 	if err != nil {
 		t.Errorf("Error was returned")
+	}
+}
+
+func TestSplitRangeFailLength(t *testing.T) {
+	vars := "[0]"
+
+	_, _, err := splitRange(vars)
+
+	if err == nil {
+		t.Error("Expecting an error, we actually got nil.")
+	}
+}
+
+func TestSplitRangeFailTypeMin(t *testing.T) {
+	vars := "[test,1]"
+
+	_, _, err := splitRange(vars)
+
+	if err == nil {
+		t.Error("Expecting an error, we got nil")
+	}
+}
+
+func TestSplitRangeFailTypeMax(t *testing.T) {
+	vars := "[0,test]"
+
+	_, _, err := splitRange(vars)
+
+	if err == nil {
+		t.Error("Expecting an error, we got nil")
 	}
 }
