@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -24,6 +26,10 @@ type SongDetails struct {
 func splitSort(vars string) (row string, order string, err error) {
 
 	sort := strings.Split(vars, ",")
+	if len(sort) != 2 {
+		err = errors.New("not the expected amount of parameters for sort string")
+		return
+	}
 	sort0 := strings.Trim(sort[0], "[")
 	sort1 := strings.Trim(sort[1], "]")
 	row = strings.Replace(sort0, "\"", "", -1)
@@ -34,14 +40,20 @@ func splitSort(vars string) (row string, order string, err error) {
 
 func splitRange(vars string) (min int64, max int64, err error) {
 	rangeminmax := strings.Split(vars, ",")
+
+	if len(rangeminmax) != 2 {
+		err = errors.New("not the expected amount of parameters for range string")
+		return
+	}
+
 	min, err = strconv.ParseInt(strings.Trim(rangeminmax[0], "["), 10, 64)
 	if err != nil {
-		fmt.Println("Error changing min string to int64 ", err)
+		log.Printf("Error changing min string to int64: %s", err)
 		return
 	}
 	max, err = strconv.ParseInt(strings.Trim(rangeminmax[1], "]"), 10, 64)
 	if err != nil {
-		fmt.Println("Error changing max string to int64 ", err)
+		log.Printf("Error changing max string to int64: %s ", err)
 		return
 	}
 
@@ -49,6 +61,7 @@ func splitRange(vars string) (min int64, max int64, err error) {
 }
 
 func songList(w http.ResponseWriter, r *http.Request) {
+	log.Printf("songList function called by %s", r.RemoteAddr)
 	vars := r.URL.Query()
 	var v struct {
 		Data  []SongDetails `json:"data"`
@@ -68,14 +81,18 @@ func songList(w http.ResponseWriter, r *http.Request) {
 		searchQuery1 := strings.Split(vars["filter"][0], ":")
 		searchQuery2 := strings.Trim(searchQuery1[1], "}")
 		searchQuery := "'%" + strings.Replace(searchQuery2, "\"", "", -1) + "%'"
+
+		log.Printf("songList: filter used: %s", vars["filter"][0])
+
 		query = fmt.Sprintf("SELECT id, artist, title, album, lenght, share, url, image FROM details WHERE artist LIKE %s ORDER BY %s %s ", searchQuery, row, order)
 	} else {
 		query = fmt.Sprintf("SELECT id, artist, title, album, lenght, share, url, image FROM details ORDER BY %s %s", row, order)
 	}
 
-	fmt.Println(query)
-	// Fetch details for the track
-	rows := querysql(query)
+	rows, err := querysql(query)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+	}
 
 	count = 0
 
