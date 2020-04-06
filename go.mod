@@ -11,4 +11,5 @@ require (
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/gorilla/mux v1.7.3
 	github.com/rs/cors v1.6.0
+	gocloud.dev v0.19.0
 )

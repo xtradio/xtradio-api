@@ -60,6 +60,20 @@ func splitRange(vars string) (min int64, max int64, err error) {
 	return min, max, nil
 }
 
+func queryBuilder(filter string, row string, order string) (query string) {
+	if filter == "{}" {
+		query = fmt.Sprintf("SELECT id, artist, title, album, lenght, share, url, image FROM details ORDER BY %s %s", row, order)
+		return query
+	}
+	searchQuery1 := strings.Split(filter, ":")
+	searchQuery2 := strings.Trim(searchQuery1[1], "}")
+	searchQuery := "'%" + strings.Replace(searchQuery2, "\"", "", -1) + "%'"
+
+	query = fmt.Sprintf("SELECT id, artist, title, album, lenght, share, url, image FROM details WHERE artist LIKE %s ORDER BY %s %s ", searchQuery, row, order)
+
+	return query
+}
+
 func songList(w http.ResponseWriter, r *http.Request) {
 	log.Printf("songList function called by %s", r.RemoteAddr)
 	vars := r.URL.Query()
@@ -70,24 +84,13 @@ func songList(w http.ResponseWriter, r *http.Request) {
 
 	var (
 		count int64
-		query string
 	)
 
 	row, order, err := splitSort(vars["sort"][0])
 
 	min, max, err := splitRange(vars["range"][0])
 
-	if vars["filter"][0] != "{}" {
-		searchQuery1 := strings.Split(vars["filter"][0], ":")
-		searchQuery2 := strings.Trim(searchQuery1[1], "}")
-		searchQuery := "'%" + strings.Replace(searchQuery2, "\"", "", -1) + "%'"
-
-		log.Printf("songList: filter used: %s", vars["filter"][0])
-
-		query = fmt.Sprintf("SELECT id, artist, title, album, lenght, share, url, image FROM details WHERE artist LIKE %s ORDER BY %s %s ", searchQuery, row, order)
-	} else {
-		query = fmt.Sprintf("SELECT id, artist, title, album, lenght, share, url, image FROM details ORDER BY %s %s", row, order)
-	}
+	query := queryBuilder(vars["filter"][0], row, order)
 
 	rows, err := querysql(query)
 	if err != nil {
@@ -100,6 +103,7 @@ func songList(w http.ResponseWriter, r *http.Request) {
 		var s SongDetails
 
 		err := rows.Scan(&s.ID, &s.Artist, &s.Title, &s.Album, &s.Length, &s.Share, &s.URL, &s.Image)
+		s.Image = "https://img.xtradio.org/tracks/" + s.Image
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			fmt.Println("Fetching item failed.", err)

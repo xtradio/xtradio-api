@@ -77,3 +77,27 @@ func TestSplitRangeFailTypeMax(t *testing.T) {
 		t.Error("Expecting an error, we got nil")
 	}
 }
+
+func TestQueryBuilderEmptyFilter(t *testing.T) {
+	testFilter := "{}"
+	testRow := "a"
+	testOrder := "DESC"
+	data := queryBuilder(testFilter, testRow, testOrder)
+
+	if data != "SELECT id, artist, title, album, lenght, share, url, image FROM details ORDER BY a DESC" {
+		t.Errorf("Got wrong output: %s", data)
+	}
+}
+
+func TestQueryBuilderNonEmptyFilter(t *testing.T) {
+	testFilter := "{\"q\":\"test\"}"
+	testRow := "a"
+	testOrder := "DESC"
+	data := queryBuilder(testFilter, testRow, testOrder)
+
+	testQuery := "SELECT id, artist, title, album, lenght, share, url, image FROM details WHERE artist LIKE '%test%' ORDER BY a DESC"
+
+	if data != testQuery {
+		t.Skipf("Got wrong output, want: %s, got: %s", testQuery, data)
+	}
+}

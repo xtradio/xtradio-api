@@ -8,16 +8,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
-<<<<<<< HEAD
-=======
-	"github.com/dghubble/go-twitter/twitter"
-	"github.com/dghubble/oauth1"
->>>>>>> Move functions out to files and fix querying
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -242,6 +235,8 @@ func publishAPI() {
 	apiRouter.HandleFunc("/api", sh.returnSongs)
 	apiRouter.HandleFunc("/v1/song/list", songList).
 		Methods("GET")
+	apiRouter.HandleFunc("/v1/song/list/upload", songUpload).
+		Methods("POST")
 	apiRouter.HandleFunc("/post/song", sh.readPost).
 		Name("putsong").
 		Queries("file", "{file}", "artist", "{artist}", "title", "{title}")
