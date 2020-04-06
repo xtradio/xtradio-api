@@ -11,8 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dghubble/go-twitter/twitter"
-	"github.com/dghubble/oauth1"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
@@ -37,8 +35,11 @@ type Duration struct {
 
 type cache struct {
 	sync.RWMutex
-	song     Song
-	duration Duration
+	song          Song
+	previousSong1 Song
+	previousSong2 Song
+	previousSong3 Song
+	duration      Duration
 }
 
 type songsHandler struct {
@@ -47,7 +48,7 @@ type songsHandler struct {
 
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "XTRadio API.")
-	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
+	log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
 }
 
 func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
@@ -55,14 +56,18 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	var song Song
 	var duration Duration
 
-	fmt.Println(time.Now(), r.RequestURI, "Reading post message for song.", vars["file"])
+	h.c.previousSong3 = h.c.previousSong2
+	h.c.previousSong2 = h.c.previousSong1
+	h.c.previousSong1 = h.c.song
 
-	connection := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=ut8", os.Getenv("MYSQL_USERNAME"), os.Getenv("MYSQL_PASSWORD"), os.Getenv("MYSQL_HOST"), os.Getenv("MYSQL_DATABASE"))
+	log.Println(time.Now(), r.RequestURI, "Reading post message for song.", vars["file"])
+
+	connection := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8", os.Getenv("MYSQL_USERNAME"), os.Getenv("MYSQL_PASSWORD"), os.Getenv("MYSQL_HOST"), os.Getenv("MYSQL_DATABASE"))
 	// Open and connect do DB
 	db, err := sql.Open("mysql", connection)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
-		fmt.Println("Ping database failed.", err)
+		log.Println("Ping database failed.", err)
 		return
 	}
 
@@ -70,7 +75,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	err = db.Ping()
 	if err != nil {
 		http.Error(w, err.Error(), 500)
-		fmt.Println("Ping database failed.", err)
+		log.Println("Ping database failed.", err)
 		return
 	}
 
@@ -78,23 +83,23 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	// insert
 	stmt, err := db.Prepare("INSERT INTO playlist (artist, title, filename, song, datum, time) VALUES (?, ?, ?, ?, ?, ?)")
 	if err != nil {
-		fmt.Println(time.Now(), "Prepare of SQL statement failed", err)
+		log.Println(time.Now(), "Prepare of SQL statement failed", err)
 		return
 	}
 
 	res, err := stmt.Exec(vars["artist"], vars["title"], vars["file"], vars["title"], time.Now().Local().Format("2006-01-02"), time.Now().Local().Format("15:04:05"))
 	if err != nil {
-		fmt.Println(time.Now(), "Adding data in to playlist failed", err)
+		log.Println(time.Now(), "Adding data in to playlist failed", err)
 		return
 	}
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		fmt.Println(time.Now(), "Error fetching last inserted ID", err)
+		log.Println(time.Now(), "Error fetching last inserted ID", err)
 		return
 	}
 
-	fmt.Println(time.Now(), "Inserted last played song with id: ", id)
+	log.Println(time.Now(), "Inserted last played song with id: ", id)
 
 	// Fetch details for the track
 	query := db.QueryRow("SELECT artist, title, album, lenght, share, url, image FROM details WHERE filename=?", vars["file"])
@@ -109,7 +114,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 		song.Length = 0
 		song.Share = ""
 		song.URL = ""
-		fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Scan not found.")
+		log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Scan not found.")
 	}
 
 	if song.Image == "" {
@@ -124,15 +129,14 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 
 	defer db.Close()
 
-	sendTweet("♪ #np " + song.Artist + " - " + song.Title + " " + song.Share)
+	// sendTweet("♪ #np " + song.Artist + " - " + song.Title + " " + song.Share)
 	tuneinAPI(song.Artist, song.Title)
-	// logSong(vars["file"])
 
 	h.c.Lock()
 	defer h.c.Unlock()
 	h.c.song = song
 	h.c.duration = duration
-	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
+	log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
 }
 
 func tuneinAPI(artist string, title string) {
@@ -141,14 +145,14 @@ func tuneinAPI(artist string, title string) {
 	partnerkey := os.Getenv("TUNEIN_PARTNER_KEY")
 	stationid := os.Getenv("TUNEIN_STATION_ID")
 	if partnerid == "" || partnerkey == "" || stationid == "" {
-		fmt.Println(time.Now(), "No tunein creds, skipping.")
+		log.Println(time.Now(), "No tunein creds, skipping.")
 		return
 	}
 
 	var URL *url.URL
 	URL, err := url.Parse("http://air.radiotime.com/Playing.ashx?")
 	if err != nil {
-		fmt.Println(time.Now(), "Tunein URL unavailable")
+		log.Println(time.Now(), "Tunein URL unavailable")
 		return
 	}
 
@@ -160,38 +164,15 @@ func tuneinAPI(artist string, title string) {
 	parameters.Add("title", title)
 	URL.RawQuery = parameters.Encode()
 
-	fmt.Printf("Encoded URL is %q\n", URL.String())
+	log.Printf("Encoded URL is %q\n", URL.String())
 	res, err := http.Get(URL.String())
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	if res.StatusCode == 200 {
-		fmt.Println(time.Now(), "TuneIn: "+artist+" - "+title)
+		log.Println(time.Now(), "TuneIn: "+artist+" - "+title)
 	} else {
-		fmt.Println(time.Now(), "Tunein submission failed.")
-	}
-}
-
-func sendTweet(message string) {
-	consumerKey := os.Getenv("TWITTER_CONSUMER_KEY")
-	consumerSecret := os.Getenv("TWITTER_CONSUMER_SECRET")
-	accessToken := os.Getenv("TWITTER_ACCESS_TOKEN")
-	accessSecret := os.Getenv("TWITTER_ACCESS_SECRET")
-	if consumerKey == "" || consumerSecret == "" || accessToken == "" || accessSecret == "" {
-		fmt.Println(time.Now(), "Missing required environment variable")
-		return
-	}
-	config := oauth1.NewConfig(consumerKey, consumerSecret)
-	token := oauth1.NewToken(accessToken, accessSecret)
-
-	// httpClient will automatically authorize http.Request's
-	httpClient := config.Client(oauth1.NoContext, token)
-
-	client := twitter.NewClient(httpClient)
-	fmt.Println(time.Now(), "Tweet sent: "+message)
-	tweet, resp, err := client.Statuses.Update(message, nil)
-	if err != nil {
-		fmt.Println(time.Now(), "Tweet not sent", tweet, resp, err)
+		log.Println(time.Now(), "Tunein submission failed.")
 	}
 }
 
@@ -202,17 +183,50 @@ func (h songsHandler) returnSongs(w http.ResponseWriter, r *http.Request) {
 	// Calculate remaining seconds in real time
 	remaining := time.Until(h.c.duration.Finished)
 	h.c.song.Remaining = int(remaining.Seconds() + 5)
-	fmt.Println("Time remaining: ", remaining.Seconds())
+	log.Println("Time remaining: ", remaining.Seconds())
 
 	if remaining.Seconds() < 0 {
-		fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Song duration expired - Faking time.")
+		log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Song duration expired - Faking time.")
 		h.c.song.Remaining = 10
 	}
-	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Served api request.")
+	log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Served api request.")
 
 	// Output json
 	json.NewEncoder(w).Encode(h.c.song)
-	fmt.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
+	log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
+}
+
+func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
+	h.c.RLock()
+	defer h.c.RUnlock()
+
+	type previousSongs []Song
+	var previousSong previousSongs
+
+	var data struct {
+		CurrentSong   Song          `json:"current"`
+		PreviousSongs previousSongs `json:"previous"`
+	}
+
+	// Calculate remaining seconds in real time
+	remaining := time.Until(h.c.duration.Finished)
+	h.c.song.Remaining = int(remaining.Seconds() + 1)
+
+	if remaining.Seconds() < 0 {
+		log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Song duration expired - Faking time.")
+		h.c.song.Remaining = 10
+	}
+
+	previousSong = append(previousSong, h.c.previousSong1)
+	previousSong = append(previousSong, h.c.previousSong2)
+	previousSong = append(previousSong, h.c.previousSong3)
+
+	data.CurrentSong = h.c.song
+	data.PreviousSongs = previousSong
+
+	// Output json
+	json.NewEncoder(w).Encode(data)
+	log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
 }
 
 func publishAPI() {
@@ -220,6 +234,7 @@ func publishAPI() {
 	apiRouter.HandleFunc("/", homePage)
 	sh := songsHandler{c: &cache{}}
 	apiRouter.HandleFunc("/api", sh.returnSongs)
+	apiRouter.HandleFunc("/v1/np/", sh.nowplaying)
 	apiRouter.HandleFunc("/post/song", sh.readPost).
 		Name("putsong").
 		Queries("file", "{file}", "artist", "{artist}", "title", "{title}")
@@ -234,6 +249,6 @@ func checkErr(err error) {
 }
 
 func main() {
-	fmt.Println("Rest API v2.0 - Mux Routers")
+	log.Println("Rest API v2.0 - Mux Routers")
 	publishAPI()
 }
