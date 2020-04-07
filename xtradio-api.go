@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -45,6 +46,34 @@ type cache struct {
 
 type songsHandler struct {
 	c *cache
+}
+
+func handleSongDetails(artist string, title string, filename string) (string, string, string, string) {
+	var show string
+
+	if artist == "" {
+		splitTitle := strings.Split(title, " - ")
+
+		if len(splitTitle) == 2 {
+
+			artist = splitTitle[0]
+			splitLive := strings.Split(splitTitle[1], " / ")
+			title = splitLive[0]
+
+			if len(splitLive) == 2 {
+				if splitLive[1] == "Live DJ" {
+					show = "live"
+				}
+			} else {
+				show = "backup"
+			}
+			return artist, title, filename, show
+		}
+	}
+
+	show = "backup"
+
+	return artist, title, filename, show
 }
 
 func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
