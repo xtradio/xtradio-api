@@ -262,6 +262,7 @@ func publishAPI() {
 	apiRouter.HandleFunc("/", homePage)
 	sh := songsHandler{c: &cache{}}
 	apiRouter.HandleFunc("/api", sh.returnSongs)
+	apiRouter.HandleFunc("/v1/np/", sh.nowplaying)
 	apiRouter.HandleFunc("/v1/song/list", songList).
 		Methods("GET")
 	apiRouter.HandleFunc("/v1/song/list/upload", songUpload).
