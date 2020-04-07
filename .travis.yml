@@ -18,10 +18,9 @@ notifications:
 script:
 - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH;
   fi`
-- docker build -f Dockerfile -t $REPO:$COMMIT .
-- docker tag $REPO:$COMMIT $REPO:$TAG
-- docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
+- docker build -f Dockerfile -t $REPO:$TRAVIS_BRANCH-$COMMIT .
+- docker tag $REPO:$TRAVIS_BRANCH-$COMMIT $REPO:$TAG
 after_success:
 - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
 - docker push $REPO:$TAG
-- docker push $REPO:$COMMIT
+- docker push $REPO:$TRAVIS_BRANCH-$COMMIT
