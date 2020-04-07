@@ -1,10 +1,12 @@
-FROM golang:alpine AS build
+FROM golang:1.13.9-alpine AS build
 WORKDIR /src
-COPY xtradio-api.go .
+COPY . .
 
-RUN apk update && apk add git ca-certificates
+RUN apk update && apk add git ca-certificates build-base
 
 RUN go get -d -v
+
+RUN go test -cover -v
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/xtradio-api .
 
