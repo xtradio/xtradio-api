@@ -89,7 +89,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	h.c.previousSong2 = h.c.previousSong1
 	h.c.previousSong1 = h.c.song
 
-	artist, title, filename, show := handleSongDetails(vars["artist"], vars["title"], vars["filename"])
+	artist, title, filename, show := handleSongDetails(vars["artist"], vars["title"], vars["file"])
 
 	log.Println(r.RequestURI, "Reading post message for song.", vars["file"])
 
