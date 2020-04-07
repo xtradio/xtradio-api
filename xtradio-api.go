@@ -49,7 +49,7 @@ type songsHandler struct {
 
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "XTRadio API.")
-	log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
+	log.Println(r.RemoteAddr, r.Method, r.URL)
 }
 
 func handleSongDetails(artist string, title string, filename string) (string, string, string, string) {
@@ -91,7 +91,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 
 	artist, title, filename, show := handleSongDetails(vars["artist"], vars["title"], vars["filename"])
 
-	log.Println(time.Now(), r.RequestURI, "Reading post message for song.", vars["file"])
+	log.Println(r.RequestURI, "Reading post message for song.", vars["file"])
 
 	connection := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8", os.Getenv("MYSQL_USERNAME"), os.Getenv("MYSQL_PASSWORD"), os.Getenv("MYSQL_HOST"), os.Getenv("MYSQL_DATABASE"))
 	// Open and connect do DB
@@ -114,23 +114,23 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	// insert
 	stmt, err := db.Prepare("INSERT INTO playlist (artist, title, filename, song, datum, time) VALUES (?, ?, ?, ?, ?, ?)")
 	if err != nil {
-		log.Println(time.Now(), "Prepare of SQL statement failed", err)
+		log.Println("Prepare of SQL statement failed", err)
 		return
 	}
 
 	res, err := stmt.Exec(artist, title, filename, title, time.Now().Local().Format("2006-01-02"), time.Now().Local().Format("15:04:05"))
 	if err != nil {
-		log.Println(time.Now(), "Adding data in to playlist failed", err)
+		log.Println("Adding data in to playlist failed", err)
 		return
 	}
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		log.Println(time.Now(), "Error fetching last inserted ID", err)
+		log.Println("Error fetching last inserted ID", err)
 		return
 	}
 
-	log.Println(time.Now(), "Inserted last played song with id: ", id)
+	log.Println("Inserted last played song with id: ", id)
 
 	// Fetch details for the track
 	query := db.QueryRow("SELECT artist, title, album, lenght, share, url, image FROM details WHERE filename=?", filename)
@@ -145,7 +145,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 		song.Length = 0
 		song.Share = ""
 		song.URL = ""
-		log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Scan not found.")
+		log.Println(r.RemoteAddr, r.Method, r.URL, "Scan not found.")
 	}
 
 	if song.Image == "" {
@@ -169,7 +169,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	defer h.c.Unlock()
 	h.c.song = song
 	h.c.duration = duration
-	log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
+	log.Println(r.RemoteAddr, r.Method, r.URL)
 }
 
 func tuneinAPI(artist string, title string) {
@@ -178,14 +178,14 @@ func tuneinAPI(artist string, title string) {
 	partnerkey := os.Getenv("TUNEIN_PARTNER_KEY")
 	stationid := os.Getenv("TUNEIN_STATION_ID")
 	if partnerid == "" || partnerkey == "" || stationid == "" {
-		log.Println(time.Now(), "No tunein creds, skipping.")
+		log.Println("No tunein creds, skipping.")
 		return
 	}
 
 	var URL *url.URL
 	URL, err := url.Parse("http://air.radiotime.com/Playing.ashx?")
 	if err != nil {
-		log.Println(time.Now(), "Tunein URL unavailable")
+		log.Println("Tunein URL unavailable")
 		return
 	}
 
@@ -203,9 +203,9 @@ func tuneinAPI(artist string, title string) {
 		log.Println(err)
 	}
 	if res.StatusCode == 200 {
-		log.Println(time.Now(), "TuneIn: "+artist+" - "+title)
+		log.Println("TuneIn: " + artist + " - " + title)
 	} else {
-		log.Println(time.Now(), "Tunein submission failed.")
+		log.Println("Tunein submission failed.")
 	}
 }
 
@@ -219,10 +219,9 @@ func (h songsHandler) returnSongs(w http.ResponseWriter, r *http.Request) {
 	log.Println("Time remaining: ", remaining.Seconds())
 
 	if remaining.Seconds() < 0 {
-		log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Song duration expired - Faking time.")
+		log.Println(r.RemoteAddr, r.Method, r.URL, "Song duration expired - Faking time.")
 		h.c.song.Remaining = 10
 	}
-	log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Served api request.")
 
 	// Output json
 	json.NewEncoder(w).Encode(h.c.song)
@@ -259,7 +258,7 @@ func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
 
 	// Output json
 	json.NewEncoder(w).Encode(data)
-	log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
+	log.Println(r.RemoteAddr, r.Method, r.URL)
 }
 
 func publishAPI() {
