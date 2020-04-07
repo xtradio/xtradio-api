@@ -225,7 +225,7 @@ func (h songsHandler) returnSongs(w http.ResponseWriter, r *http.Request) {
 
 	// Output json
 	json.NewEncoder(w).Encode(h.c.song)
-	log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
+	log.Println(r.RemoteAddr, r.Method, r.URL)
 }
 
 func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
@@ -245,7 +245,7 @@ func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
 	h.c.song.Remaining = int(remaining.Seconds() + 1)
 
 	if remaining.Seconds() < 0 {
-		log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL, "Song duration expired - Faking time.")
+		log.Println(r.RemoteAddr, r.Method, r.URL, "Song duration expired - Faking time.")
 		h.c.song.Remaining = 10
 	}
 
