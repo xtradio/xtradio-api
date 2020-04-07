@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -51,6 +52,34 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	log.Println(time.Now(), r.RemoteAddr, r.Method, r.URL)
 }
 
+func handleSongDetails(artist string, title string, filename string) (string, string, string, string) {
+	var show string
+
+	if artist == "" {
+		splitTitle := strings.Split(title, " - ")
+
+		if len(splitTitle) == 2 {
+
+			artist = splitTitle[0]
+			splitLive := strings.Split(splitTitle[1], " / ")
+			title = splitLive[0]
+
+			if len(splitLive) == 2 {
+				if splitLive[1] == "Live DJ" {
+					show = "live"
+				}
+			} else {
+				show = "backup"
+			}
+			return artist, title, filename, show
+		}
+	}
+
+	show = "backup"
+
+	return artist, title, filename, show
+}
+
 func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	var song Song
@@ -59,6 +88,8 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	h.c.previousSong3 = h.c.previousSong2
 	h.c.previousSong2 = h.c.previousSong1
 	h.c.previousSong1 = h.c.song
+
+	artist, title, filename, show := handleSongDetails(vars["artist"], vars["title"], vars["filename"])
 
 	log.Println(time.Now(), r.RequestURI, "Reading post message for song.", vars["file"])
 
@@ -87,7 +118,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := stmt.Exec(vars["artist"], vars["title"], vars["file"], vars["title"], time.Now().Local().Format("2006-01-02"), time.Now().Local().Format("15:04:05"))
+	res, err := stmt.Exec(artist, title, filename, title, time.Now().Local().Format("2006-01-02"), time.Now().Local().Format("15:04:05"))
 	if err != nil {
 		log.Println(time.Now(), "Adding data in to playlist failed", err)
 		return
@@ -102,14 +133,14 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	log.Println(time.Now(), "Inserted last played song with id: ", id)
 
 	// Fetch details for the track
-	query := db.QueryRow("SELECT artist, title, album, lenght, share, url, image FROM details WHERE filename=?", vars["file"])
+	query := db.QueryRow("SELECT artist, title, album, lenght, share, url, image FROM details WHERE filename=?", filename)
 
 	// Save it to the "Songs" struct
 	err = query.Scan(&song.Artist, &song.Title, &song.Album, &song.Length, &song.Share, &song.URL, &song.Image)
 	if err != nil {
 		// If the song is not in the db, use the metadata passed from liquidsoap
-		song.Artist = vars["artist"]
-		song.Title = vars["title"]
+		song.Artist = artist
+		song.Title = title
 		song.Album = ""
 		song.Length = 0
 		song.Share = ""
@@ -120,6 +151,8 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	if song.Image == "" {
 		song.Image = "default.png"
 	}
+
+	song.Show = show
 
 	// Add url to image
 	song.Image = "https://img.xtradio.org/tracks/" + song.Image
