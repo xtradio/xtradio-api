@@ -45,6 +45,8 @@ func fetchUpcomingSongsFromDb(list []string) []UpcomingSongs {
 
 	for _, v := range list {
 
+		log.Printf("Searching for filename: %s", v)
+
 		var u UpcomingSongs
 
 		query := db.QueryRow("SELECT artist, title, lenght, share, image FROM details WHERE filename=?", v)
