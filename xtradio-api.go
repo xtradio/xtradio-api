@@ -40,6 +40,7 @@ type cache struct {
 	previousSong1 Song
 	previousSong2 Song
 	previousSong3 Song
+	upcomingData  []UpcomingSongs
 	duration      Duration
 }
 
@@ -169,6 +170,10 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 	defer h.c.Unlock()
 	h.c.song = song
 	h.c.duration = duration
+
+	upcomingSongs := upcomingSongs()
+	h.c.upcomingData = upcomingSongs
+
 	log.Println(r.RemoteAddr, r.Method, r.URL)
 }
 
@@ -235,9 +240,12 @@ func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
 	type previousSongs []Song
 	var previousSong previousSongs
 
+	type upcomingSongs []UpcomingSongs
+
 	var data struct {
 		CurrentSong   Song          `json:"current"`
 		PreviousSongs previousSongs `json:"previous"`
+		UpcomingSongs upcomingSongs `json:"upcoming"`
 	}
 
 	// Calculate remaining seconds in real time
@@ -255,6 +263,8 @@ func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
 
 	data.CurrentSong = h.c.song
 	data.PreviousSongs = previousSong
+
+	data.UpcomingSongs = h.c.upcomingData
 
 	// Output json
 	json.NewEncoder(w).Encode(data)
