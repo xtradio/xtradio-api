@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-contrib/sse"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
@@ -271,6 +272,47 @@ func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.RemoteAddr, r.Method, r.URL)
 }
 
+func (h songsHandler) sseNowPlaying(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "text/event-stream")
+
+	h.c.RLock()
+	defer h.c.RUnlock()
+
+	type previousSongs []Song
+	var previousSong previousSongs
+
+	type upcomingSongs []UpcomingSongs
+
+	var data struct {
+		CurrentSong   Song          `json:"current"`
+		PreviousSongs previousSongs `json:"previous"`
+		UpcomingSongs upcomingSongs `json:"upcoming"`
+	}
+
+	// Calculate remaining seconds in real time
+	remaining := time.Until(h.c.duration.Finished)
+	h.c.song.Remaining = int(remaining.Seconds() + 1)
+
+	if remaining.Seconds() < 0 {
+		log.Println(r.RemoteAddr, r.Method, r.URL, "Song duration expired - Faking time.")
+		h.c.song.Remaining = 10
+	}
+
+	previousSong = append(previousSong, h.c.previousSong1)
+	previousSong = append(previousSong, h.c.previousSong2)
+	previousSong = append(previousSong, h.c.previousSong3)
+
+	data.CurrentSong = h.c.song
+	data.PreviousSongs = previousSong
+
+	data.UpcomingSongs = h.c.upcomingData
+
+	sse.Encode(w, sse.Event{
+		Data: data,
+	})
+}
+
 func publishAPI() {
 	apiRouter := mux.NewRouter().StrictSlash(true)
 	apiRouter.HandleFunc("/", homePage)
@@ -280,6 +322,7 @@ func publishAPI() {
 	apiRouter.HandleFunc("/post/song", sh.readPost).
 		Name("putsong").
 		Queries("file", "{file}", "artist", "{artist}", "title", "{title}")
+	apiRouter.HandleFunc("/v1/sse/np", sh.sseNowPlaying)
 
 	log.Fatal(http.ListenAndServe(":10000", apiRouter))
 }
