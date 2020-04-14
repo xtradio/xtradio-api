@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"regexp"
 )
 
 // UpcomingSongs details
@@ -45,11 +46,15 @@ func fetchUpcomingSongsFromDb(list []string) []UpcomingSongs {
 
 	for _, v := range list {
 
-		log.Printf("Searching for filename: %s", v)
+		re := regexp.MustCompile(`\/MUSIC\/.*`)
+
+		parsedFilename := re.FindString(v)
+
+		log.Printf("Searching for filename: %s", parsedFilename)
 
 		var u UpcomingSongs
 
-		query := db.QueryRow("SELECT artist, title, lenght, share, image FROM details WHERE filename=?", v)
+		query := db.QueryRow("SELECT artist, title, lenght, share, image FROM details WHERE filename=?", parsedFilename)
 
 		err = query.Scan(&u.Artist, &u.Title, &u.Length, &u.Share, &u.Image)
 		if err != nil {
@@ -65,7 +70,7 @@ func fetchUpcomingSongsFromDb(list []string) []UpcomingSongs {
 }
 
 func upcomingSongs() []UpcomingSongs {
-	command := "BACKUP.next"
+	command := "playlist(dot)txt.next"
 	data := telnet(command)
 	dbParsedData := fetchUpcomingSongsFromDb(data)
 	return dbParsedData
