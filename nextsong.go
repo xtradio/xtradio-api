@@ -61,6 +61,12 @@ func fetchUpcomingSongsFromDb(list []string) []UpcomingSongs {
 			log.Println("Fetching item failed.", err)
 		}
 
+		if u.Image == "" {
+			u.Image = "default.png"
+		}
+
+		u.Image = fmt.Sprintf("https://img.xtradio.org/tracks/%s", u.Image)
+
 		r = append(r, u)
 
 	}
