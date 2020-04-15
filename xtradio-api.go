@@ -273,7 +273,6 @@ func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h songsHandler) sseNowPlaying(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "text/event-stream")
 
 	h.c.RLock()
