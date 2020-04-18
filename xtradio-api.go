@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-contrib/sse"
+	"github.com/alexandrevicenzi/go-sse"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
@@ -82,7 +82,7 @@ func handleSongDetails(artist string, title string, filename string) (string, st
 	return artist, title, filename, show
 }
 
-func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
+func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request, s *sse.Server) {
 	vars := mux.Vars(r)
 	var song Song
 	var duration Duration
@@ -174,6 +174,8 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request) {
 
 	upcomingSongs := upcomingSongs()
 	h.c.upcomingData = upcomingSongs
+
+	np(s, h)
 
 	log.Println(r.RemoteAddr, r.Method, r.URL)
 }
@@ -272,11 +274,7 @@ func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.RemoteAddr, r.Method, r.URL)
 }
 
-func (h songsHandler) sseNowPlaying(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/event-stream")
-
-	h.c.RLock()
-	defer h.c.RUnlock()
+func np(s *sse.Server, h songsHandler) {
 
 	type previousSongs []Song
 	var previousSong previousSongs
@@ -294,7 +292,6 @@ func (h songsHandler) sseNowPlaying(w http.ResponseWriter, r *http.Request) {
 	h.c.song.Remaining = int(remaining.Seconds() + 1)
 
 	if remaining.Seconds() < 0 {
-		log.Println(r.RemoteAddr, r.Method, r.URL, "Song duration expired - Faking time.")
 		h.c.song.Remaining = 10
 	}
 
@@ -307,21 +304,30 @@ func (h songsHandler) sseNowPlaying(w http.ResponseWriter, r *http.Request) {
 
 	data.UpcomingSongs = h.c.upcomingData
 
-	sse.Encode(w, sse.Event{
-		Data: data,
-	})
+	msg, err := json.Marshal(data)
+
+	if err != nil {
+		fmt.Println("There was an error creating the json blob, ", err)
+	}
+
+	s.SendMessage("", sse.SimpleMessage(string(msg)))
+
 }
 
 func publishAPI() {
+	s := sse.NewServer(nil)
+	defer s.Shutdown()
+
 	apiRouter := mux.NewRouter().StrictSlash(true)
 	apiRouter.HandleFunc("/", homePage)
 	sh := songsHandler{c: &cache{}}
 	apiRouter.HandleFunc("/api", sh.returnSongs)
 	apiRouter.HandleFunc("/v1/np/", sh.nowplaying)
-	apiRouter.HandleFunc("/post/song", sh.readPost).
-		Name("putsong").
-		Queries("file", "{file}", "artist", "{artist}", "title", "{title}")
-	apiRouter.HandleFunc("/v1/sse/np", sh.sseNowPlaying)
+	apiRouter.HandleFunc("/post/song", func(w http.ResponseWriter, r *http.Request) {
+		sh.readPost(w, r, s)
+	}).Queries("file", "{file}", "artist", "{artist}", "title", "{title}")
+	apiRouter.Handle("/v1/sse/np", s)
+	// apiRouter.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 
 	log.Fatal(http.ListenAndServe(":10000", apiRouter))
 }
