@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
 )
 
@@ -9,7 +9,7 @@ func getEnv(envKey string) (envValue string) {
 
 	envValue, ok := os.LookupEnv(envKey)
 	if ok != true {
-		fmt.Printf("please set %s environment variable", envKey)
+		log.Printf("please set %s environment variable", envKey)
 		return
 	}
 

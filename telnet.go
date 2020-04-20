@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"net"
 	"strings"
 )
@@ -29,7 +30,7 @@ func telnet(command string) []string {
 		if x > 3 {
 			break
 		} else if strings.HasPrefix(data.Text(), "[playing]") {
-			fmt.Println("Skipping: " + data.Text())
+			log.Println("Skipping: " + data.Text())
 		} else if strings.HasPrefix(data.Text(), "[ready]") {
 			song := strings.Replace(data.Text(), "[ready] ", "", -1)
 			response = append(response, song)
