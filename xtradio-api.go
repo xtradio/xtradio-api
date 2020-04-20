@@ -14,6 +14,7 @@ import (
 	"github.com/alexandrevicenzi/go-sse"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // Song details
@@ -266,6 +267,13 @@ func publishAPI() {
 	}).Queries("file", "{file}", "artist", "{artist}", "title", "{title}")
 	apiRouter.Handle("/v1/sse/np", s)
 	// apiRouter.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+
+	metricsServe := mux.NewRouter().StrictSlash(true)
+	metricsServe.Handle("/metrics", promhttp.Handler())
+
+	go func() {
+		log.Fatal(http.ListenAndServe(":10001", metricsServe))
+	}()
 
 	log.Fatal(http.ListenAndServe(":10000", apiRouter))
 }

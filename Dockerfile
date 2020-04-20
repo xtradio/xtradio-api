@@ -24,5 +24,6 @@ COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # #ADD ./bin/xtradio-api /xtradio-api
 EXPOSE 10000
+EXPOSE 10001
 
 CMD ["/bin/xtradio-api"]
