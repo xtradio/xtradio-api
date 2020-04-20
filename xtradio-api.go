@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -174,43 +173,6 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request, s *sse.Se
 	np(s, h)
 
 	log.Println(r.RemoteAddr, r.Method, r.URL)
-}
-
-func tuneinAPI(artist string, title string) {
-
-	partnerid := os.Getenv("TUNEIN_PARTNER_ID")
-	partnerkey := os.Getenv("TUNEIN_PARTNER_KEY")
-	stationid := os.Getenv("TUNEIN_STATION_ID")
-	if partnerid == "" || partnerkey == "" || stationid == "" {
-		log.Println("No tunein creds, skipping.")
-		return
-	}
-
-	var URL *url.URL
-	URL, err := url.Parse("http://air.radiotime.com/Playing.ashx?")
-	if err != nil {
-		log.Println("Tunein URL unavailable")
-		return
-	}
-
-	parameters := url.Values{}
-	parameters.Add("partnerId", partnerid)
-	parameters.Add("partnerKey", partnerkey)
-	parameters.Add("id", stationid)
-	parameters.Add("artist", artist)
-	parameters.Add("title", title)
-	URL.RawQuery = parameters.Encode()
-
-	log.Printf("Encoded URL is %q\n", URL.String())
-	res, err := http.Get(URL.String())
-	if err != nil {
-		log.Println(err)
-	}
-	if res.StatusCode == 200 {
-		log.Println("TuneIn: " + artist + " - " + title)
-	} else {
-		log.Println("Tunein submission failed.")
-	}
 }
 
 func (h songsHandler) returnSongs(w http.ResponseWriter, r *http.Request) {
