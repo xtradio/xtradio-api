@@ -37,12 +37,10 @@ type Duration struct {
 
 type cache struct {
 	sync.RWMutex
-	song          Song
-	previousSong1 Song
-	previousSong2 Song
-	previousSong3 Song
-	upcomingData  []UpcomingSongs
-	duration      Duration
+	song         Song
+	previousData []Song
+	upcomingData []UpcomingSongs
+	duration     Duration
 }
 
 type songsHandler struct {
@@ -87,9 +85,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request, s *sse.Se
 	var song Song
 	var duration Duration
 
-	h.c.previousSong3 = h.c.previousSong2
-	h.c.previousSong2 = h.c.previousSong1
-	h.c.previousSong1 = h.c.song
+	h.c.previousData = songHistory(h.c.previousData, h.c.song)
 
 	artist, title, filename, show := handleSongDetails(vars["artist"], vars["title"], vars["file"])
 
@@ -241,8 +237,6 @@ func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
 	defer h.c.RUnlock()
 
 	type previousSongs []Song
-	var previousSong previousSongs
-
 	type upcomingSongs []UpcomingSongs
 
 	var data struct {
@@ -260,12 +254,8 @@ func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
 		h.c.song.Remaining = 10
 	}
 
-	previousSong = append(previousSong, h.c.previousSong1)
-	previousSong = append(previousSong, h.c.previousSong2)
-	previousSong = append(previousSong, h.c.previousSong3)
-
 	data.CurrentSong = h.c.song
-	data.PreviousSongs = previousSong
+	data.PreviousSongs = h.c.previousData
 
 	data.UpcomingSongs = h.c.upcomingData
 
@@ -277,8 +267,6 @@ func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
 func np(s *sse.Server, h songsHandler) {
 
 	type previousSongs []Song
-	var previousSong previousSongs
-
 	type upcomingSongs []UpcomingSongs
 
 	var data struct {
@@ -295,12 +283,8 @@ func np(s *sse.Server, h songsHandler) {
 		h.c.song.Remaining = 10
 	}
 
-	previousSong = append(previousSong, h.c.previousSong1)
-	previousSong = append(previousSong, h.c.previousSong2)
-	previousSong = append(previousSong, h.c.previousSong3)
-
 	data.CurrentSong = h.c.song
-	data.PreviousSongs = previousSong
+	data.PreviousSongs = h.c.previousData
 
 	data.UpcomingSongs = h.c.upcomingData
 
