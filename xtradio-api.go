@@ -253,7 +253,7 @@ func np(s *sse.Server, h songsHandler) {
 	msg, err := json.Marshal(data)
 
 	if err != nil {
-		fmt.Println("There was an error creating the json blob, ", err)
+		log.Println("There was an error creating the json blob, ", err)
 	}
 
 	s.SendMessage("", sse.SimpleMessage(string(msg)))
@@ -281,12 +281,6 @@ func publishAPI() {
 	// apiRouter.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 
 	log.Fatal(http.ListenAndServe(":10000", apiRouter))
-}
-
-func checkErr(err error) {
-	if err != nil {
-		panic(err)
-	}
 }
 
 func main() {
