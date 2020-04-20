@@ -315,7 +315,12 @@ func np(s *sse.Server, h songsHandler) {
 }
 
 func publishAPI() {
-	s := sse.NewServer(nil)
+	s := sse.NewServer(&sse.Options{
+		// Increase default retry interval to 10m.
+		RetryInterval: 10 * 6 * 10 * 1000,
+		// Print debug info
+		Logger: log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile),
+	})
 	defer s.Shutdown()
 
 	apiRouter := mux.NewRouter().StrictSlash(true)
