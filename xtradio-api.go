@@ -177,8 +177,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request, s *sse.Se
 	h.c.song = song
 	h.c.duration = duration
 
-	upcomingSongs := upcomingSongs()
-	h.c.upcomingData = upcomingSongs
+	h.c.upcomingData = upcomingSongs()
 
 	sseOutput(s, h)
 
