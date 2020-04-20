@@ -42,6 +42,16 @@ type cache struct {
 	duration     Duration
 }
 
+// PreviousSongs is the struct to hold the list of songs previously played
+type PreviousSongs []Song
+
+// APIOutput is a struct to gather all types of data to be outputted
+type APIOutput struct {
+	CurrentSong   Song            `json:"current"`
+	PreviousSongs PreviousSongs   `json:"previous"`
+	UpcomingSongs []UpcomingSongs `json:"upcoming"`
+}
+
 type songsHandler struct {
 	c *cache
 }
@@ -170,7 +180,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request, s *sse.Se
 	upcomingSongs := upcomingSongs()
 	h.c.upcomingData = upcomingSongs
 
-	np(s, h)
+	sseOutput(s, h)
 
 	log.Println(r.RemoteAddr, r.Method, r.URL)
 }
@@ -194,61 +204,40 @@ func (h songsHandler) returnSongs(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.RemoteAddr, r.Method, r.URL)
 }
 
-func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
-	h.c.RLock()
-	defer h.c.RUnlock()
+func nowplaying(h songsHandler) APIOutput {
 
-	type previousSongs []Song
-	type upcomingSongs []UpcomingSongs
-
-	var data struct {
-		CurrentSong   Song          `json:"current"`
-		PreviousSongs previousSongs `json:"previous"`
-		UpcomingSongs upcomingSongs `json:"upcoming"`
-	}
+	var data APIOutput
 
 	// Calculate remaining seconds in real time
 	remaining := time.Until(h.c.duration.Finished)
 	h.c.song.Remaining = int(remaining.Seconds() + 1)
 
 	if remaining.Seconds() < 0 {
-		log.Println(r.RemoteAddr, r.Method, r.URL, "Song duration expired - Faking time.")
+		log.Println("Song duration expired - Faking time.")
 		h.c.song.Remaining = 10
 	}
 
 	data.CurrentSong = h.c.song
 	data.PreviousSongs = h.c.previousData
-
 	data.UpcomingSongs = h.c.upcomingData
+
+	return data
+}
+
+func (h songsHandler) apiOutput(w http.ResponseWriter, r *http.Request) {
+	h.c.RLock()
+	defer h.c.RUnlock()
+
+	data := nowplaying(h)
 
 	// Output json
 	json.NewEncoder(w).Encode(data)
 	log.Println(r.RemoteAddr, r.Method, r.URL)
 }
 
-func np(s *sse.Server, h songsHandler) {
+func sseOutput(s *sse.Server, h songsHandler) {
 
-	type previousSongs []Song
-	type upcomingSongs []UpcomingSongs
-
-	var data struct {
-		CurrentSong   Song          `json:"current"`
-		PreviousSongs previousSongs `json:"previous"`
-		UpcomingSongs upcomingSongs `json:"upcoming"`
-	}
-
-	// Calculate remaining seconds in real time
-	remaining := time.Until(h.c.duration.Finished)
-	h.c.song.Remaining = int(remaining.Seconds() + 1)
-
-	if remaining.Seconds() < 0 {
-		h.c.song.Remaining = 10
-	}
-
-	data.CurrentSong = h.c.song
-	data.PreviousSongs = h.c.previousData
-
-	data.UpcomingSongs = h.c.upcomingData
+	data := nowplaying(h)
 
 	msg, err := json.Marshal(data)
 
@@ -257,7 +246,6 @@ func np(s *sse.Server, h songsHandler) {
 	}
 
 	s.SendMessage("", sse.SimpleMessage(string(msg)))
-
 }
 
 func publishAPI() {
@@ -273,7 +261,7 @@ func publishAPI() {
 	apiRouter.HandleFunc("/", homePage)
 	sh := songsHandler{c: &cache{}}
 	apiRouter.HandleFunc("/api", sh.returnSongs)
-	apiRouter.HandleFunc("/v1/np/", sh.nowplaying)
+	apiRouter.HandleFunc("/v1/np/", sh.apiOutput)
 	apiRouter.HandleFunc("/post/song", func(w http.ResponseWriter, r *http.Request) {
 		sh.readPost(w, r, s)
 	}).Queries("file", "{file}", "artist", "{artist}", "title", "{title}")
