@@ -34,6 +34,7 @@ func fetchUpcomingSongsFromDb(list []string) []UpcomingSongs {
 	db, err := sql.Open("mysql", connection)
 	if err != nil {
 		log.Printf("Opening db connection failed: %s", err)
+		dbConnectionFailure.Inc()
 	}
 
 	defer db.Close()
@@ -59,6 +60,7 @@ func fetchUpcomingSongsFromDb(list []string) []UpcomingSongs {
 		err = query.Scan(&u.Artist, &u.Title, &u.Length, &u.Share, &u.Image)
 		if err != nil {
 			log.Println("Fetching item failed.", err)
+			dbConnectionFailure.Inc()
 		}
 
 		if u.Image == "" {
@@ -75,9 +77,15 @@ func fetchUpcomingSongsFromDb(list []string) []UpcomingSongs {
 
 }
 
-func upcomingSongs() []UpcomingSongs {
+func upcomingSongs() ([]UpcomingSongs, error) {
+	var dbParsedData []UpcomingSongs
 	command := "playlist(dot)txt.next"
-	data := telnet(command)
-	dbParsedData := fetchUpcomingSongsFromDb(data)
-	return dbParsedData
+	data, err := telnet(command)
+
+	if err != nil {
+		return dbParsedData, err
+	}
+	dbParsedData = fetchUpcomingSongsFromDb(data)
+
+	return dbParsedData, nil
 }

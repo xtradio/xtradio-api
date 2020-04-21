@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func constructTuneinURL(endpoint string, artist string, title string) string {
@@ -42,6 +44,7 @@ func tuneinAPI(artist string, title string) {
 		log.Println(err)
 	}
 	if res.StatusCode == 200 {
+		tuneinSubmission.With(prometheus.Labels{"artist": artist, "title": title}).Inc()
 		log.Printf("Successfull TuneIn submission: %s - %s", artist, title)
 	} else {
 		log.Println("Tunein submission failed, error code: ", res.StatusCode)

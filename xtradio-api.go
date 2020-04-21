@@ -14,6 +14,7 @@ import (
 	"github.com/alexandrevicenzi/go-sse"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -107,6 +108,8 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request, s *sse.Se
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		log.Println("Ping database failed.", err)
+		dbConnectionFailure.Inc()
+
 		return
 	}
 
@@ -115,6 +118,8 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request, s *sse.Se
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		log.Println("Ping database failed.", err)
+		dbConnectionFailure.Inc()
+
 		return
 	}
 
@@ -173,12 +178,17 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request, s *sse.Se
 	// sendTweet("♪ #np " + song.Artist + " - " + song.Title + " " + song.Share)
 	tuneinAPI(song.Artist, song.Title)
 
+	songsPlayed.With(prometheus.Labels{"artist": song.Artist, "title": song.Title, "show": song.Show}).Inc()
+
 	h.c.Lock()
 	defer h.c.Unlock()
 	h.c.song = song
 	h.c.duration = duration
 
-	h.c.upcomingData = upcomingSongs()
+	h.c.upcomingData, err = upcomingSongs()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+	}
 
 	sseOutput(s, h)
 
