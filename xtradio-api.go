@@ -260,6 +260,7 @@ func (h songsHandler) nowplaying(w http.ResponseWriter, r *http.Request) {
 func publishAPI() {
 	apiRouter := mux.NewRouter().StrictSlash(true)
 	apiRouter.HandleFunc("/", homePage)
+	apiRouter.HandleFunc("/search", songSearch)
 	sh := songsHandler{c: &cache{}}
 	apiRouter.HandleFunc("/api", sh.returnSongs)
 	apiRouter.HandleFunc("/v1/np/", sh.nowplaying)
