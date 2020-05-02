@@ -99,7 +99,7 @@ func songList(w http.ResponseWriter, r *http.Request) {
 		if s.Image == "" {
 			s.Image = "default.png"
 		}
-		s.Image = fmt.Sprintf("https://img.xtradio.org/tracks/%s", s.Image)
+		s.Image = fmt.Sprintf("https://img.xtcd.in/tracks/%s", s.Image)
 
 		v.Data = append(v.Data, s)
 
