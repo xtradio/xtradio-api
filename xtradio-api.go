@@ -266,7 +266,7 @@ func publishAPI() {
 	apiRouter.HandleFunc("/v1/np/", sh.nowplaying)
 	apiRouter.HandleFunc("/v1/song/list", songList).
 		Methods("GET")
-	apiRouter.HandleFunc("/v1/song/list/upload", songUpload).
+	apiRouter.HandleFunc("/v1/song/upload", songUpload).
 		Methods("POST")
 	apiRouter.HandleFunc("/post/song", sh.readPost).
 		Name("putsong").
