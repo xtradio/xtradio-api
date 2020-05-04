@@ -1,17 +1,31 @@
-# xtradio-api
+# xtradio-admin
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/4f18592c47374d23982426853fb9a6ad)](https://app.codacy.com/app/puck/xtradio-api?utm_source=github.com&utm_medium=referral&utm_content=xtradio/xtradio-api&utm_campaign=badger)
-[![Build Status](https://travis-ci.org/xtradio/xtradio-api.svg?branch=master)](https://travis-ci.org/xtradio/xtradio-api)
+XTRadio Admin interface and API
 
-XTRadio JSON Api to retrieve currently playing song and additional metadata.
+##
 
-## Build instructions
+ENV Variables needed:
 
-Build using :
-``` CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/xtradio-api . ```
+For MySQL:
 
-## Golang tutorials
+> MYSQL_HOSTNAME
 
-The following tutorials helped us build our code, we've started with no prior knowledge of golang, maybe they will be helpfull for others as well.
+> MYSQL_USERNAME
 
-* [Creating restful API with golang](https://tutorialedge.net/post/golang/creating-restful-api-with-golang/)
+> MYSQL_PASSWORD
+
+> MYSQL_DATABASE
+
+For Spotify searches:
+
+> SPOTIFY_CLIENT_ID
+
+> SPOTIFY_CLIENT_SECRET
+
+For Soundcloud searches:
+
+> SOUNDCLOUD_CLIENT_ID
+
+Misc:
+
+> MUSIC_UPLOAD_DIR

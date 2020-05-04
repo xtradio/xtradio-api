@@ -92,7 +92,7 @@ func saveFile(file multipart.File, header *multipart.FileHeader, _ error) (strin
 
 	defer file.Close()
 
-	directory, err := getEnv("XTRADIO_MUSIC_UPLOAD_DIR")
+	directory, err := getEnv("MUSIC_UPLOAD_DIR")
 	if err != nil {
 		return "", err
 	}
