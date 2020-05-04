@@ -56,32 +56,3 @@ func dbConnection() (*sql.DB, error) {
 
 	return db, nil
 }
-
-func querysql(query string) (*sql.Rows, error) {
-
-	db, err := dbConnection()
-
-	tx, err := db.Begin()
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		switch err {
-		case nil:
-			err = tx.Commit()
-		default:
-			tx.Rollback()
-		}
-	}()
-
-	defer db.Close()
-
-	rows, err := db.Query(query)
-	if err != nil {
-		fmt.Printf("Fetching rows failed: %s", err)
-		return nil, err
-	}
-
-	return rows, nil
-}

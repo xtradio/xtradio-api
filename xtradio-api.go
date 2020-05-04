@@ -280,12 +280,6 @@ func publishAPI() {
 	log.Fatal(http.ListenAndServe(":10000", c.Handler(apiRouter)))
 }
 
-func checkErr(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func main() {
 	log.Println("Rest API v2.0 - Mux Routers")
 	publishAPI()

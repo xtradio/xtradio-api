@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -21,97 +22,66 @@ type SongDetails struct {
 	URL      string `json:"url"`
 }
 
-// func splitSort(vars string) (row string, order string, err error) {
-
-// 	sort := strings.Split(vars, ",")
-// 	if len(sort) != 2 {
-// 		err = errors.New("not the expected amount of parameters for sort string")
-// 		return
-// 	}
-// 	sort0 := strings.Trim(sort[0], "[")
-// 	sort1 := strings.Trim(sort[1], "]")
-// 	row = strings.Replace(sort0, "\"", "", -1)
-// 	order = strings.Replace(sort1, `"`, ``, -1)
-
-// 	return row, order, nil
-// }
-
-// func splitRange(vars string) (min int64, max int64, err error) {
-// 	rangeminmax := strings.Split(vars, ",")
-
-// 	if len(rangeminmax) != 2 {
-// 		err = errors.New("not the expected amount of parameters for range string")
-// 		return
-// 	}
-
-// 	min, err = strconv.ParseInt(strings.Trim(rangeminmax[0], "["), 10, 64)
-// 	if err != nil {
-// 		log.Printf("Error changing min string to int64: %s", err)
-// 		return
-// 	}
-// 	max, err = strconv.ParseInt(strings.Trim(rangeminmax[1], "]"), 10, 64)
-// 	if err != nil {
-// 		log.Printf("Error changing max string to int64: %s ", err)
-// 		return
-// 	}
-
-// 	return min, max, nil
-// }
-
-// func queryBuilder(filter string, row string, order string) (query string) {
-// 	if filter == "{}" {
-// 		query = fmt.Sprintf("SELECT id, artist, title, album, lenght, share, url, image FROM details ORDER BY %s %s", row, order)
-// 		return query
-// 	}
-// 	searchQuery1 := strings.Split(filter, ":")
-// 	searchQuery2 := strings.Trim(searchQuery1[1], "}")
-// 	searchQuery := "'%" + strings.Replace(searchQuery2, "\"", "", -1) + "%'"
-
-// 	query = fmt.Sprintf("SELECT id, artist, title, album, lenght, share, url, image FROM details WHERE artist LIKE %s ORDER BY %s %s ", searchQuery, row, order)
-
-// 	return query
-// }
-
 func songList(w http.ResponseWriter, r *http.Request) {
 	log.Printf("songList function called by %s", r.RemoteAddr)
 	var v struct {
 		Data []SongDetails `json:"data"`
 	}
 
-	query := "SELECT id, filename, artist, title, album, lenght, share, url, image FROM details ORDER BY id DESC"
-
-	rows, err := querysql(query)
+	db, err := dbConnection()
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		log.Println("Error opening connection to DB: ", err)
+		return
+	}
+	defer db.Close()
+
+	v.Data, err = getSongsFromDB(db)
+	if err != nil {
+		log.Println("Error getting items from database: ", err)
+		return
+	}
+
+	json.NewEncoder(w).Encode(v)
+}
+
+func getSongsFromDB(db *sql.DB) ([]SongDetails, error) {
+	var l []SongDetails
+
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		switch err {
+		case nil:
+			err = tx.Commit()
+		default:
+			tx.Rollback()
+		}
+	}()
+
+	rows, err := db.Query("SELECT id, filename, artist, title, album, lenght, share, url, image FROM details ORDER BY id DESC")
+
+	if err != nil {
+		return nil, err
 	}
 
 	for rows.Next() {
 		var s SongDetails
 
-		err := rows.Scan(&s.ID, &s.Filename, &s.Artist, &s.Title, &s.Album, &s.Length, &s.Share, &s.URL, &s.Image)
-
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			fmt.Println("Fetching item failed.", err)
-			return
-		}
+		rows.Scan(&s.ID, &s.Filename, &s.Artist, &s.Title, &s.Album, &s.Length, &s.Share, &s.URL, &s.Image)
 
 		if s.Image == "" {
 			s.Image = "default.png"
 		}
 		s.Image = fmt.Sprintf("https://img.xtcd.in/tracks/%s", s.Image)
 
-		v.Data = append(v.Data, s)
+		l = append(l, s)
 
 	}
-
-	p, err := json.Marshal(v)
-	if err != nil {
-		fmt.Println("Error on defining json", err)
-		return
-	}
-	fmt.Fprintf(w, string(p))
 
 	defer rows.Close()
 
+	return l, nil
 }

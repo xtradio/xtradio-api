@@ -36,6 +36,7 @@ func songUpload(w http.ResponseWriter, r *http.Request) {
 	f.Artist, f.Title, f.URL, f.Image = r.FormValue("artist"), r.FormValue("title"), r.FormValue("url"), r.FormValue("image")
 
 	db, err := dbConnection()
+	defer db.Close()
 
 	log.Println(f)
 
@@ -76,8 +77,6 @@ func songUpload(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(h)
 		return
 	}
-
-	defer db.Close()
 
 	h.Response = "success"
 	h.Reason = fmt.Sprintf("Saved data with id %d", savedID)

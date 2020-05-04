@@ -94,6 +94,6 @@ func TestSaveDataFail(t *testing.T) {
 	_, err = saveData(db, testFilename, testArtist, testTitle, testDuration, testShare, testImage)
 
 	if err == nil {
-		t.Errorf("Was expecting an error, we actually passed.")
+		t.Errorf("Was expecting an error, got none.")
 	}
 }
