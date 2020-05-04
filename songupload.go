@@ -33,11 +33,9 @@ func songUpload(w http.ResponseWriter, r *http.Request) {
 	var f formDetails
 	var h httpResponse
 
-	f.Artist = r.FormValue("artist")
-	f.Title = r.FormValue("title")
-	// f.Duration = r.FormValue("duration/")
-	f.URL = r.FormValue("url")
-	f.Image = r.FormValue("image")
+	f.Artist, f.Title, f.URL, f.Image = r.FormValue("artist"), r.FormValue("title"), r.FormValue("url"), r.FormValue("image")
+
+	db, err := dbConnection()
 
 	log.Println(f)
 
@@ -70,7 +68,7 @@ func songUpload(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
-	savedID, err := saveData(filename, f.Artist, f.Title, fileDuration, f.URL, image)
+	savedID, err := saveData(db, filename, f.Artist, f.Title, fileDuration, f.URL, image)
 	if err != nil {
 		log.Println("Saving data to DB failed:", err)
 		h.Response = "fail"
@@ -78,6 +76,8 @@ func songUpload(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(h)
 		return
 	}
+
+	defer db.Close()
 
 	h.Response = "success"
 	h.Reason = fmt.Sprintf("Saved data with id %d", savedID)
@@ -101,7 +101,7 @@ func saveFile(file multipart.File, header *multipart.FileHeader, _ error) (strin
 	filename := fmt.Sprintf("%s/%s", directory, header.Filename)
 
 	ok := doesExist(filename)
-	if ok != true {
+	if ok != false {
 		return "", fmt.Errorf("File %s already exists", filename)
 	}
 	// Copy the file data to my buffer
@@ -119,48 +119,39 @@ func saveFile(file multipart.File, header *multipart.FileHeader, _ error) (strin
 
 func doesExist(filename string) bool {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		return true
+		return false
 	}
-	return false
+	return true
 }
 
-func saveData(filename string, artist string, title string, duration float64, share string, image string) (int64, error) {
-	connection := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8", os.Getenv("MYSQL_USERNAME"), os.Getenv("MYSQL_PASSWORD"), os.Getenv("MYSQL_HOST"), os.Getenv("MYSQL_DATABASE"))
-	// Open and connect do DB
-	db, err := sql.Open("mysql", connection)
-	if err != nil {
-		log.Println("Ping database failed.", err)
-		return 0, err
-	}
-
-	// Open doesn't open a connection. Validate DSN data:
-	err = db.Ping()
-	if err != nil {
-		log.Println("Ping database failed.", err)
-		return 0, err
-	}
-
+func saveData(db *sql.DB, filename string, artist string, title string, duration float64, share string, image string) (int64, error) {
 	// Add raw data in to database
 	// insert
-	stmt, err := db.Prepare("INSERT INTO details (filename, artist, title, album, lenght, share, url, image, playlist, vote, review) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+
+	tx, err := db.Begin()
 	if err != nil {
-		log.Println("Prepare of SQL statement failed", err)
 		return 0, err
 	}
 
-	res, err := stmt.Exec(filename, artist, title, "", duration, share, "", image, "daily", 0, 1)
+	defer func() {
+		switch err {
+		case nil:
+			err = tx.Commit()
+		default:
+			tx.Rollback()
+		}
+	}()
+
+	stmt, err := tx.Exec("INSERT INTO details (filename, artist, title, album, lenght, share, url, image, playlist, vote, review) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", filename, artist, title, "", duration, share, "", image, "daily", 0, 1)
 	if err != nil {
-		log.Println("Adding data in to details table failed", err)
 		return 0, err
 	}
 
-	id, err := res.LastInsertId()
+	id, err := stmt.LastInsertId()
 	if err != nil {
-		log.Println("Error fetching last inserted ID", err)
 		return 0, err
 	}
 
-	log.Println("Inserted last played song with id: ", id)
 	return id, nil
 }
 

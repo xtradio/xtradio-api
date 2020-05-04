@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 )
 
@@ -18,29 +17,24 @@ func getEnv(envKey string) (envValue string, err error) {
 	return envValue, nil
 }
 
-func querysql(query string) (*sql.Rows, error) {
-
+func dbConnection() (*sql.DB, error) {
 	username, err := getEnv("MYSQL_USERNAME")
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 
 	password, err := getEnv("MYSQL_PASSWORD")
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 
 	host, err := getEnv("MYSQL_HOST")
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 
 	database, err := getEnv("MYSQL_DATABASE")
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 
@@ -49,16 +43,39 @@ func querysql(query string) (*sql.Rows, error) {
 	// Open and connect do DB
 	db, err := sql.Open("mysql", connection)
 	if err != nil {
-		log.Printf("Opening db connection failed: %s", err)
 		return nil, err
 	}
 
 	// Open doesn't open a connection. Validate DSN data:
 	err = db.Ping()
 	if err != nil {
-		log.Printf("Ping database failed: %s", err)
 		return nil, err
 	}
+
+	// defer db.Close()
+
+	return db, nil
+}
+
+func querysql(query string) (*sql.Rows, error) {
+
+	db, err := dbConnection()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		switch err {
+		case nil:
+			err = tx.Commit()
+		default:
+			tx.Rollback()
+		}
+	}()
+
+	defer db.Close()
 
 	rows, err := db.Query(query)
 	if err != nil {
