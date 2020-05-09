@@ -28,4 +28,6 @@ For Soundcloud searches:
 
 Misc:
 
-> MUSIC_UPLOAD_DIR
+> MUSIC_UPLOAD_DIR - ex. "files"
+
+> CDN_URL - ex. "localhost:10003"

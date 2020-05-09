@@ -10,6 +10,7 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/tcolgate/mp3"
@@ -59,15 +60,14 @@ func songUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Send image to CDN to save it.
-	image := ""
-	// image, err := downloadFile("files/test.jpg", f.Image)
-	// if err != nil {
-	// 	log.Println("Saving image failed: ", err)
-	// 	h.Response = "fail"
-	// 	h.Reason = "Failed to save image."
-	// 	json.NewEncoder(w).Encode(h)
-	// 	return
-	// }
+	image, err := sendToCDN(f.Image)
+	if err != nil {
+		log.Println("Saving image failed: ", err)
+		h.Response = "fail"
+		h.Reason = "Failed to save image."
+		json.NewEncoder(w).Encode(h)
+		return
+	}
 
 	savedID, err := saveData(db, filename, f.Artist, f.Title, fileDuration, f.URL, image)
 	if err != nil {
@@ -182,23 +182,50 @@ func duration(file string) (float64, error) {
 
 }
 
-// func downloadFile(filepath string, url string) (string, error) {
+func sendToCDN(imgURL string) (string, error) {
+	type cdnResponse struct {
+		Response string `json:"response"`
+		Filename string `json:"filename"`
+	}
 
-// 	// Get the data
-// 	resp, err := http.Get(url)
-// 	if err != nil {
-// 		return filepath, err
-// 	}
-// 	defer resp.Body.Close()
+	var URL *url.URL
+	var c cdnResponse
 
-// 	// Create the file
-// 	out, err := os.Create(filepath)
-// 	if err != nil {
-// 		return filepath, err
-// 	}
-// 	defer out.Close()
+	cdnURL, err := getEnv("CDN_URL")
+	if err != nil {
+		return "", err
+	}
 
-// 	// Write the body to file
-// 	_, err = io.Copy(out, resp.Body)
-// 	return filepath, err
-// }
+	URL, _ = url.Parse(fmt.Sprintf("http://%s/v1/upload", cdnURL))
+
+	data := url.Values{}
+	data.Set("imgURL", imgURL)
+
+	URL.RawQuery = data.Encode()
+
+	res, err := http.Get(URL.String())
+	if err != nil {
+		return "", err
+	}
+
+	if res.StatusCode != 200 {
+		errMsg := fmt.Errorf("response code from URL was %d", res.StatusCode)
+		return "", errMsg
+	}
+
+	f, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+
+	res.Body.Close()
+
+	json.Unmarshal(f, &c)
+
+	if c.Response != "ok" {
+		errMsg := fmt.Errorf("failed to upload image to CDN")
+		return "", errMsg
+	}
+
+	return c.Filename, nil
+}
