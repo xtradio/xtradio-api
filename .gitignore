@@ -1,3 +1,4 @@
 *.swp
 static
 xtradio-api
+.envrc

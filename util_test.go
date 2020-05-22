@@ -39,7 +39,6 @@ func TestSongHistory(t *testing.T) {
 		Length:    123,
 		Remaining: 5,
 		Share:     "http://soundcloud.com/xtradio",
-		URL:       "test-test",
 	}
 
 	existingSong := Song{
@@ -51,7 +50,6 @@ func TestSongHistory(t *testing.T) {
 		Length:    123,
 		Remaining: 5,
 		Share:     "http://soundcloud.com/xtradio",
-		URL:       "test-test",
 	}
 
 	existingSong1 := Song{
@@ -63,7 +61,6 @@ func TestSongHistory(t *testing.T) {
 		Length:    123,
 		Remaining: 5,
 		Share:     "http://soundcloud.com/xtradio",
-		URL:       "test-test",
 	}
 
 	existingSong2 := Song{
@@ -75,7 +72,6 @@ func TestSongHistory(t *testing.T) {
 		Length:    123,
 		Remaining: 5,
 		Share:     "http://soundcloud.com/xtradio",
-		URL:       "test-test",
 	}
 
 	getData := songHistory(songList, newSong)

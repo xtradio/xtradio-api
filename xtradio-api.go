@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -20,15 +21,14 @@ import (
 
 // Song details
 type Song struct {
-	Title     string `json:"song"`
-	Artist    string `json:"artist"`
-	Show      string `json:"show"`
-	Image     string `json:"image"`
-	Album     string `json:"album"`
-	Length    int    `json:"length"`
-	Remaining int    `json:"remaining"`
-	Share     string `json:"share"`
-	URL       string `json:"url"`
+	Title     string  `json:"song"`
+	Artist    string  `json:"artist"`
+	Show      string  `json:"show"`
+	Image     string  `json:"image"`
+	Album     string  `json:"album"`
+	Length    float64 `json:"length"`
+	Remaining float64 `json:"remaining"`
+	Share     string  `json:"share"`
 }
 
 // Duration of the song
@@ -63,8 +63,17 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.RemoteAddr, r.Method, r.URL)
 }
 
-func handleSongDetails(artist string, title string, filename string) (string, string, string, string) {
+func handleSongDetails(artist string, title string, filename string, image string, share string, length string) (string, string, string, string, string, string, float64) {
 	var show string
+
+	if image == "" {
+		image = "default.png"
+	}
+
+	lengthFloat64, err := strconv.ParseFloat(length, 10)
+	if err != nil {
+		log.Println("Error converting string to float64", err)
+	}
 
 	if artist == "" {
 		splitTitle := strings.Split(title, " - ")
@@ -82,13 +91,13 @@ func handleSongDetails(artist string, title string, filename string) (string, st
 			} else {
 				show = "backup"
 			}
-			return artist, title, filename, show
+			return artist, title, filename, show, image, share, lengthFloat64
 		}
 	}
 
 	show = "backup"
 
-	return artist, title, filename, show
+	return artist, title, filename, show, image, share, lengthFloat64
 }
 
 func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request, s *sse.Server) {
@@ -98,7 +107,9 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request, s *sse.Se
 
 	h.c.previousData = songHistory(h.c.previousData, h.c.song)
 
-	artist, title, filename, show := handleSongDetails(vars["artist"], vars["title"], vars["file"])
+	var filename string
+
+	song.Artist, song.Title, filename, song.Show, song.Image, song.Share, song.Length = handleSongDetails(vars["artist"], vars["title"], vars["file"], vars["image"], vars["share"], vars["length"])
 
 	log.Println(r.RequestURI, "Reading post message for song.", vars["file"])
 
@@ -131,7 +142,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request, s *sse.Se
 		return
 	}
 
-	res, err := stmt.Exec(artist, title, filename, title, time.Now().Local().Format("2006-01-02"), time.Now().Local().Format("15:04:05"))
+	res, err := stmt.Exec(song.Artist, song.Title, filename, song.Title, time.Now().Local().Format("2006-01-02"), time.Now().Local().Format("15:04:05"))
 	if err != nil {
 		log.Println("Adding data in to playlist failed", err)
 		return
@@ -145,35 +156,13 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request, s *sse.Se
 
 	log.Println("Inserted last played song with id: ", id)
 
-	// Fetch details for the track
-	query := db.QueryRow("SELECT artist, title, album, lenght, share, url, image FROM details WHERE filename=?", filename)
-
-	// Save it to the "Songs" struct
-	err = query.Scan(&song.Artist, &song.Title, &song.Album, &song.Length, &song.Share, &song.URL, &song.Image)
-	if err != nil {
-		// If the song is not in the db, use the metadata passed from liquidsoap
-		song.Artist = artist
-		song.Title = title
-		song.Album = ""
-		song.Length = 0
-		song.Share = ""
-		song.URL = ""
-		log.Println(r.RemoteAddr, r.Method, r.URL, "Scan not found.")
-	}
-
-	if song.Image == "" {
-		song.Image = "default.png"
-	}
-
-	song.Show = show
-
 	// Add url to image
 	song.Image = "https://img.xtradio.org/tracks/" + song.Image
 
 	// Calculate when the song will finish, will be needed for the "remaining" var
 	duration.Finished = time.Now().Local().Add(time.Second * time.Duration(song.Length))
 
-	defer db.Close()
+	// defer db.Close()
 
 	// sendTweet("♪ #np " + song.Artist + " - " + song.Title + " " + song.Share)
 	tuneinAPI(song.Artist, song.Title)
@@ -201,7 +190,7 @@ func (h songsHandler) returnSongs(w http.ResponseWriter, r *http.Request) {
 
 	// Calculate remaining seconds in real time
 	remaining := time.Until(h.c.duration.Finished)
-	h.c.song.Remaining = int(remaining.Seconds() + 5)
+	h.c.song.Remaining = float64(remaining.Seconds())
 	log.Println("Time remaining: ", remaining.Seconds())
 
 	if remaining.Seconds() < 0 {
@@ -220,7 +209,7 @@ func nowplaying(h songsHandler) APIOutput {
 
 	// Calculate remaining seconds in real time
 	remaining := time.Until(h.c.duration.Finished)
-	h.c.song.Remaining = int(remaining.Seconds() + 1)
+	h.c.song.Remaining = float64(remaining.Seconds())
 
 	if remaining.Seconds() < 0 {
 		log.Println("Song duration expired - Faking time.")
@@ -274,7 +263,7 @@ func publishAPI() {
 	apiRouter.HandleFunc("/v1/np/", sh.apiOutput)
 	apiRouter.HandleFunc("/post/song", func(w http.ResponseWriter, r *http.Request) {
 		sh.readPost(w, r, s)
-	}).Queries("file", "{file}", "artist", "{artist}", "title", "{title}")
+	}).Queries("file", "{file}", "artist", "{artist}", "title", "{title}", "image", "{image}", "share", "{share}", "length", "{length}")
 	apiRouter.Handle("/v1/sse/np", s)
 	// apiRouter.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 
