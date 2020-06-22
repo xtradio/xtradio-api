@@ -157,7 +157,7 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request, s *sse.Se
 	log.Println("Inserted last played song with id: ", id)
 
 	// Add url to image
-	song.Image = "https://img.xtradio.org/tracks/" + song.Image
+	song.Image = "https://img.xtcd.in/tracks/" + song.Image
 
 	// Calculate when the song will finish, will be needed for the "remaining" var
 	duration.Finished = time.Now().Local().Add(time.Second * time.Duration(song.Length))
