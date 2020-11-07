@@ -1,4 +1,4 @@
-FROM golang:1.13.9-alpine AS build
+FROM golang:1.14-alpine AS build
 WORKDIR /src
 COPY . .
 
@@ -8,7 +8,7 @@ RUN go get -d -v
 
 RUN go test -cover -v
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/xtradio-api .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags "-w -s" -o bin/xtradio-api .
 
 FROM scratch
 

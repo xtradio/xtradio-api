@@ -1,6 +1,6 @@
 module github.com/xtradio/xtradio-api
 
-go 1.13
+go 1.14
 
 require (
 	github.com/alexandrevicenzi/go-sse v1.5.0
