@@ -8,6 +8,7 @@ jobs:
   build:
     env:
       GO111MODULE: off
+      SHORTSHA: $(git rev-parse --short=8 ${{ github.sha }})
     strategy:
       matrix:
         go-version: [1.14.x]
@@ -37,4 +38,4 @@ jobs:
           push: true
           tags: |
             xtradio/api:latest
-            xtradio/api:${GITHUB_SHA::8}
+            xtradio/api:$SHORTSHA
