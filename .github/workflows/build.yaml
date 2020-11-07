@@ -22,8 +22,8 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      - name: Install packages
-        run: go install
+      - name: Get go dependencies
+        run: go get
 
       - name: Run vet & lint
         run: |
