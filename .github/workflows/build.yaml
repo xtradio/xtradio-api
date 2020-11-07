@@ -8,6 +8,7 @@ jobs:
   build:
     env:
       GO111MODULE: off
+      GOPATH: $HOME
     strategy:
       matrix:
         go-version: [1.14.x]
