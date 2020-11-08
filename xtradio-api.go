@@ -230,6 +230,7 @@ func (h songsHandler) apiOutput(w http.ResponseWriter, r *http.Request) {
 	data := nowplaying(h)
 
 	// Output json
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
 	log.Println(r.RemoteAddr, r.Method, r.URL)
 }
