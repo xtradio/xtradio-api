@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
 	"log"
 	"os"
 )
@@ -31,4 +33,30 @@ func songHistory(list []Song, song Song) []Song {
 	}
 
 	return data
+}
+
+func dbConnection() (*sql.DB, error) {
+	username := getEnv("MYSQL_USERNAME")
+
+	password := getEnv("MYSQL_PASSWORD")
+
+	host := getEnv("MYSQL_HOST")
+
+	database := getEnv("MYSQL_DATABASE")
+
+	connection := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8", username, password, host, database)
+
+	// Open and connect do DB
+	db, err := sql.Open("mysql", connection)
+	if err != nil {
+		return nil, err
+	}
+
+	// Open doesn't open a connection. Validate DSN data:
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }

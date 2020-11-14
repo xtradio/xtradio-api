@@ -100,6 +100,49 @@ func handleSongDetails(artist string, title string, filename string, image strin
 	return artist, title, filename, show, image, share, lengthFloat64
 }
 
+func logSongToDB(db *sql.DB, song Song, filename string) (int64, error) {
+	if getEnv("LOG_TO_DB") != "true" {
+		return 0, nil
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return 0, nil
+	}
+
+	defer func() {
+		switch err {
+		case nil:
+			err = tx.Commit()
+		default:
+			tx.Rollback()
+		}
+	}()
+	// Add raw data in to database
+	// insert
+	stmt, err := tx.Prepare("INSERT INTO playlist (artist, title, filename, song, datum, time) VALUES (?, ?, ?, ?, ?, ?)")
+	if err != nil {
+		log.Println("Prepare of SQL statement failed", err)
+		return 0, err
+	}
+
+	res, err := stmt.Exec(song.Artist, song.Title, filename, song.Title, time.Now().Local().Format("2006-01-02"), time.Now().Local().Format("15:04:05"))
+	if err != nil {
+		log.Println("Adding data in to playlist failed", err)
+		return 0, err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		log.Println("Error fetching last inserted ID", err)
+		return 0, err
+	}
+
+	log.Println("Inserted last played song with id: ", id)
+
+	return id, nil
+}
+
 func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request, s *sse.Server) {
 	vars := mux.Vars(r)
 	var song Song
@@ -113,49 +156,15 @@ func (h songsHandler) readPost(w http.ResponseWriter, r *http.Request, s *sse.Se
 
 	log.Println(r.RequestURI, "Reading post message for song.", vars["file"])
 
-	connection := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8", os.Getenv("MYSQL_USERNAME"), os.Getenv("MYSQL_PASSWORD"), os.Getenv("MYSQL_HOST"), os.Getenv("MYSQL_DATABASE"))
-	// Open and connect do DB
-	db, err := sql.Open("mysql", connection)
+	db, err := dbConnection()
 	if err != nil {
-		http.Error(w, err.Error(), 500)
-		log.Println("Ping database failed.", err)
-		dbConnectionFailure.Inc()
-
-		return
+		log.Println("Connection to DB failed.")
+	} else {
+		_, err := logSongToDB(db, song, filename)
+		if err != nil {
+			log.Println("Error inserting np song to DB.", err)
+		}
 	}
-
-	// Open doesn't open a connection. Validate DSN data:
-	err = db.Ping()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		log.Println("Ping database failed.", err)
-		dbConnectionFailure.Inc()
-
-		return
-	}
-
-	// Add raw data in to database
-	// insert
-	stmt, err := db.Prepare("INSERT INTO playlist (artist, title, filename, song, datum, time) VALUES (?, ?, ?, ?, ?, ?)")
-	if err != nil {
-		log.Println("Prepare of SQL statement failed", err)
-		return
-	}
-
-	res, err := stmt.Exec(song.Artist, song.Title, filename, song.Title, time.Now().Local().Format("2006-01-02"), time.Now().Local().Format("15:04:05"))
-	if err != nil {
-		log.Println("Adding data in to playlist failed", err)
-		return
-	}
-
-	id, err := res.LastInsertId()
-	if err != nil {
-		log.Println("Error fetching last inserted ID", err)
-		return
-	}
-
-	log.Println("Inserted last played song with id: ", id)
-
 	// Add url to image
 	song.Image = "https://img.xtcd.in/tracks/" + song.Image
 
