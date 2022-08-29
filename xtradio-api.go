@@ -207,6 +207,7 @@ func (h songsHandler) returnSongs(w http.ResponseWriter, r *http.Request) {
 		h.c.song.Remaining = 10
 	}
 
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	// Output json
 	json.NewEncoder(w).Encode(h.c.song)
 	log.Println(r.RemoteAddr, r.Method, r.URL)
@@ -240,6 +241,7 @@ func (h songsHandler) apiOutput(w http.ResponseWriter, r *http.Request) {
 
 	// Output json
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(data)
 	log.Println(r.RemoteAddr, r.Method, r.URL)
 }
